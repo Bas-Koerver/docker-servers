@@ -1,0 +1,34 @@
+services:
+  radarr:
+    image: ghcr.io/hotio/radarr:release-6.1.1.10360
+    restart: unless-stopped
+    container_name: radarr
+    hostname: radarr.internal
+    labels:
+      traefik.enable: true
+      traefik.http.routers.radarr.rule: Host(`radarr.xn--krver-jua.it`)
+      traefik.http.routers.radarr.entrypoints: websecure
+      traefik.http.routers.radarr.tls: true
+      # traefik.http.routers.radarr.tls.certresolver: cf-dns-resolver
+      traefik.http.routers.radarr.middlewares: error-pages-middleware
+    environment:
+      - PUID=1103
+      - PGID=1001
+      - UMASK=002
+      - TZ=Europe/Amsterdam
+    volumes:
+      - type: bind
+        source: ${APPDATA_LOCATION:?No appdata directory configured}/radarr
+        target: /config
+      - type: bind
+        source: ${DATA_LOCATION:?No data directory configured}
+        target: /data
+        bind:
+          create_host_path: true
+    ports:
+      - name: web-ui
+        target: 7878
+        published: 7878
+        protocol: tcp
+        app_protocol: http
+        mode: host

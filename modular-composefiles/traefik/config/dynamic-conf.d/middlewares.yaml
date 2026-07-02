@@ -1,7 +1,0 @@
-http:
-  middlewares:
-    redirect_to_xn--krver-jua:
-      redirectRegex:
-        regex: "^(.*\\.*)korver\\.it(/*.*)"
-        replacement: "${1}xn--krver-jua.it${2}"
-        permanent: true

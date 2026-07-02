@@ -1,0 +1,108 @@
+services:
+  server:
+    image: ghcr.io/goauthentik/server:2026.5
+    restart: unless-stopped
+    container_name: authentik-server
+    command: server
+    shm_size: 512mb
+
+    depends_on:
+      postgresql:
+        condition: service_healthy
+
+    environment:
+      AUTHENTIK_POSTGRESQL__HOST: postgresql
+      AUTHENTIK_POSTGRESQL__NAME: ${PG_DB:-authentik}
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
+      AUTHENTIK_POSTGRESQL__USER: ${PG_USER:-authentik}
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:?secret key required}
+    
+    labels:
+      traefik.enable: true
+      traefik.http.routers.authentik.rule: Host(`authentik.xn--krver-jua.it`)
+      traefik.http.routers.authentik.entrypoints: websecure
+      traefik.http.routers.authentik.tls: true
+      traefik.http.routers.authentik.middlewares: error-pages-middleware
+      traefik.http.services.authentik.loadbalancer.server.port: 9000
+    
+    volumes:
+      - type: bind
+        source: ${APPDATA_LOCATION:?No appdata directory configured}/authentik/data
+        target: /data
+      - type: bind
+        source: ${APPDATA_LOCATION:?No appdata directory configured}/authentik/templates
+        target: /templates
+
+    ports:
+      - name: "http"
+        published: ${COMPOSE_PORT_HTTP:-9000}
+        target: 9000
+        protocol: tcp
+      - name: "https"
+        published: ${COMPOSE_PORT_HTTPS:-9443}
+        target: 9443
+        protocol: tcp
+
+
+  worker:
+    image: ghcr.io/goauthentik/server:2026.5
+    container_name: authentik-worker
+    restart: unless-stopped
+    # container_name: authentik-worker
+    user: root
+    command: worker
+    shm_size: 512mb
+
+    depends_on:
+      postgresql:
+        condition: service_healthy
+
+    environment:
+      AUTHENTIK_POSTGRESQL__HOST: postgresql
+      AUTHENTIK_POSTGRESQL__NAME: ${PG_DB:-authentik}
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
+      AUTHENTIK_POSTGRESQL__USER: ${PG_USER:-authentik}
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:?secret key required}    
+    
+    volumes:
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+        read_only: true
+      - type: bind
+        source: ${APPDATA_LOCATION:?No appdata directory configured}/authentik/data
+        target: /data
+      - type: bind
+        source: ${APPDATA_LOCATION:?No appdata directory configured}/authentik/templates
+        target: /templates
+      - type: bind
+        source: ${APPDATA_LOCATION:?No appdata directory configured}/authentik/certs
+        target: /certs
+
+
+  postgresql:
+    image: docker.io/library/postgres:18-alpine
+    restart: unless-stopped
+    container_name: postgresql-authentik
+
+    environment:
+      POSTGRES_DB: ${PG_DB:-authentik}
+      POSTGRES_USER: ${PG_USER:-authentik}
+      POSTGRES_PASSWORD: ${PG_PASS:?database password required}
+
+    volumes:
+      - type: bind
+        source: ${APPDATA_LOCATION:?No appdata directory configured}/authentik/postgresql
+        target: /var/lib/postgresql/
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready", "-d", "$${POSTGRES_DB}", "-U", "$${POSTGRES_USER}"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+networks:
+  default:
+    name: traefik
+    external: true
