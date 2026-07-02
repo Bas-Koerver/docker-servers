@@ -9,4 +9,4 @@
 *.ini
 *.secret
 
-/appdata
+appdata/
