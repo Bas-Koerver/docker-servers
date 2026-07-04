@@ -98,8 +98,6 @@ secrets:
     file: ${SECRETS_LOCATION:?No secrets folder configured}/${CLOUDFLARE_DNS_TOKEN:?No cloudflare DNS token file configured}
   CLOUDFLARE_ZONE_TOKEN:
     file: ${SECRETS_LOCATION:?No secrets folder configured}/${CLOUDFLARE_ZONE_TOKEN:?No cloudflare Zone token file configured}
-  TRAEFIK_USERS_FILE:
-    file: ${SECRETS_LOCATION:?No secrets folder configured}/${TRAEFIK_USERS_FILE:?No traefik users file configured}
     
 
 networks:
