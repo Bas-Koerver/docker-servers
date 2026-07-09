@@ -4,26 +4,23 @@ services:
     restart: unless-stopped
     container_name: autobrr
     hostname: autobrr.internal
+
     labels:
       traefik.enable: true
       traefik.http.routers.autobrr.rule: Host(`autobrr.xn--krver-jua.it`)
       traefik.http.routers.autobrr.entrypoints: websecure
       traefik.http.routers.autobrr.tls: true
-      # traefik.http.routers.autobrr.tls.certresolver: cf-dns-resolver
       traefik.http.routers.autobrr.middlewares: error-pages-middleware
+      traefik.http.routers.autobrr.service: autobrr
+      traefik.http.services.autobrr.loadbalancer.server.port: 7474
+
     environment:
       - PUID=1107
       - PGID=1001
       - UMASK=002
       - TZ=Europe/Amsterdam
+
     volumes:
       - type: bind
         source: ${APPDATA_LOCATION:?No appdata directory configured}/autobrr
         target: /config
-    ports:
-      - name: web-ui
-        target: 7474
-        published: 7474
-        protocol: tcp
-        app_protocol: http
-        mode: host

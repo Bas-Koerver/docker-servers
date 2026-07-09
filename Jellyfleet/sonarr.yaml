@@ -4,18 +4,22 @@ services:
     restart: unless-stopped
     container_name: sonarr
     hostname: sonarr.internal
+
     labels:
       traefik.enable: true
       traefik.http.routers.sonarr.rule: Host(`sonarr.xn--krver-jua.it`)
       traefik.http.routers.sonarr.entrypoints: websecure
       traefik.http.routers.sonarr.tls: true
-      # traefik.http.routers.sonarr.tls.certresolver: cf-dns-resolver
       traefik.http.routers.sonarr.middlewares: error-pages-middleware
+      traefik.http.routers.sonarr.service: sonarr
+      traefik.http.services.sonarr.loadbalancer.server.port: 8989
+
     environment:
       - PUID=1104
       - PGID=1001
       - UMASK=002
       - TZ=Europe/Amsterdam
+
     volumes:
       - type: bind
         source: ${APPDATA_LOCATION:?No appdata directory configured}/sonarr
@@ -25,10 +29,3 @@ services:
         target: /data
         bind:
           create_host_path: true
-    ports:
-      - name: web-ui
-        target: 8989
-        published: 8989
-        protocol: tcp
-        app_protocol: http
-        mode: host

@@ -12,10 +12,10 @@ services:
 
     environment:
       AUTHENTIK_POSTGRESQL__HOST: postgresql
-      AUTHENTIK_POSTGRESQL__NAME: ${PG_DB:-authentik}
-      AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
-      AUTHENTIK_POSTGRESQL__USER: ${PG_USER:-authentik}
-      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:?secret key required}
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__USER: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: file:///run/secrets/pg_pass
+      AUTHENTIK_SECRET_KEY: file:///run/secrets/secret_key
     
     labels:
       traefik.enable: true
@@ -33,13 +33,23 @@ services:
         source: ${APPDATA_LOCATION:?No appdata directory configured}/authentik/templates
         target: /templates
 
+    secrets:
+      - source: AUTHENTIK_SECRET_KEY
+        target: secret_key
+      - source: POSTGRES_PASSWORD
+        target: pg_pass
+
+    networks:
+      - traefik
+      - back-end
+
     ports:
       - name: "http"
-        published: ${COMPOSE_PORT_HTTP:-9000}
+        published: 9000
         target: 9000
         protocol: tcp
       - name: "https"
-        published: ${COMPOSE_PORT_HTTPS:-9443}
+        published: 9443
         target: 9443
         protocol: tcp
 
@@ -48,7 +58,7 @@ services:
     image: ghcr.io/goauthentik/server:2026.5
     container_name: authentik-worker
     restart: unless-stopped
-    # container_name: authentik-worker
+    container_name: authentik-worker
     user: root
     command: worker
     shm_size: 512mb
@@ -59,10 +69,10 @@ services:
 
     environment:
       AUTHENTIK_POSTGRESQL__HOST: postgresql
-      AUTHENTIK_POSTGRESQL__NAME: ${PG_DB:-authentik}
-      AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
-      AUTHENTIK_POSTGRESQL__USER: ${PG_USER:-authentik}
-      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:?secret key required}    
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__USER: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: file:///run/secrets/pg_pass
+      AUTHENTIK_SECRET_KEY: file:///run/secrets/secret_key
     
     volumes:
       - type: bind
@@ -79,6 +89,15 @@ services:
         source: ${APPDATA_LOCATION:?No appdata directory configured}/authentik/certs
         target: /certs
 
+    secrets:
+      - source: AUTHENTIK_SECRET_KEY
+        target: secret_key
+      - source: POSTGRES_PASSWORD
+        target: pg_pass
+
+    networks:
+      - back-end
+
 
   postgresql:
     image: docker.io/library/postgres:18-alpine
@@ -86,23 +105,37 @@ services:
     container_name: postgresql-authentik
 
     environment:
-      POSTGRES_DB: ${PG_DB:-authentik}
-      POSTGRES_USER: ${PG_USER:-authentik}
-      POSTGRES_PASSWORD: ${PG_PASS:?database password required}
+      POSTGRES_DB: authentik
+      POSTGRES_USER: authentik
+      POSTGRES_PASSWORD_FILE: /run/secrets/pg_pass
 
     volumes:
       - type: bind
         source: ${APPDATA_LOCATION:?No appdata directory configured}/authentik/postgresql
         target: /var/lib/postgresql/
 
+    secrets:
+      - source: POSTGRES_PASSWORD
+        target: pg_pass
+
+    networks:
+      - back-end
+
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready", "-d", "$${POSTGRES_DB}", "-U", "$${POSTGRES_USER}"]
+      test: ["CMD-SHELL", "pg_isready", "-d", "authentik", "-U", "authentik"]
       interval: 30s
       timeout: 5s
       retries: 5
       start_period: 20s
 
+secrets:
+  POSTGRES_PASSWORD:
+    file: ${SECRETS_LOCATION:?No secrets folder configured}/${PG_PASS_FILE:?No database password file configured}
+  AUTHENTIK_SECRET_KEY:
+    file: ${SECRETS_LOCATION:?No secrets folder configured}/${AUTHENTIK_SECRET_KEY_FILE:?No authentik secret key file configured}
+
 networks:
-  default:
-    name: traefik
-    external: true
+  traefik:
+    external: true  
+  back-end:
+    internal: true

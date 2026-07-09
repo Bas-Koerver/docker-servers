@@ -1,5 +1,3 @@
-name: jellyfleet
-
 include:
   - jellyfin.yaml
   - seerr.yaml
@@ -10,6 +8,7 @@ include:
   - autobrr.yaml
   - bazarr.yaml
   - qbittorrent.yaml
+
 
 networks:
   default:
