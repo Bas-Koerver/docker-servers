@@ -1,6 +1,6 @@
 services:
   seerr:
-    image: ghcr.io/hotio/seerr:release-3.3.0
+    image: ghcr.io/hotio/seerr:release-v3
     restart: unless-stopped
     container_name: seerr
     hostname: seerr.internal

@@ -19,10 +19,12 @@ services:
     
     labels:
       traefik.enable: true
+      traefik.docker.network: traefik
       traefik.http.routers.authentik.rule: Host(`authentik.xn--krver-jua.it`)
       traefik.http.routers.authentik.entrypoints: websecure
       traefik.http.routers.authentik.tls: true
       traefik.http.routers.authentik.middlewares: error-pages-middleware
+      traefik.http.routers.authentik.service: authentik
       traefik.http.services.authentik.loadbalancer.server.port: 9000
     
     volumes:
@@ -42,16 +44,6 @@ services:
     networks:
       - traefik
       - back-end
-
-    ports:
-      - name: "http"
-        published: 9000
-        target: 9000
-        protocol: tcp
-      - name: "https"
-        published: 9443
-        target: 9443
-        protocol: tcp
 
 
   worker:

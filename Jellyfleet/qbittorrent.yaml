@@ -1,6 +1,6 @@
 services:
   qbittorrent:
-    image: ghcr.io/hotio/qbittorrent:release-5.2.1
+    image: ghcr.io/hotio/qbittorrent:release-v5
     restart: unless-stopped
     container_name: qbittorrent
     hostname: qbittorrent.internal
