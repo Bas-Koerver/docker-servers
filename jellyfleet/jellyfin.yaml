@@ -1,0 +1,31 @@
+services:
+  jellyfin:
+    image: ghcr.io/hotio/jellyfin:release-v10
+    restart: unless-stopped
+    container_name: jellyfin
+    hostname: jellyfin.internal
+
+    labels:
+      traefik.enable: true
+      traefik.http.routers.jellyfin.rule: Host(`jellyfin.xn--krver-jua.it`)
+      traefik.http.routers.jellyfin.entrypoints: websecure
+      traefik.http.routers.jellyfin.tls: true
+      traefik.http.routers.jellyfin.middlewares: error-pages-middleware
+      traefik.http.routers.jellyfin.service: jellyfin
+      traefik.http.services.jellyfin.loadBalancer.server.port: 8096
+
+    environment:
+      - PUID=1101
+      - PGID=1001
+      - UMASK=002
+      - TZ=Europe/Amsterdam
+
+    volumes:
+      - type: bind
+        source: ${APPDATA_LOCATION:?No appdata directory configured}/jellyfin
+        target: /config
+      - type: bind
+        source: ${DATA_LOCATION:?No data directory configured}/media
+        target: /data/media
+        bind:
+          create_host_path: true

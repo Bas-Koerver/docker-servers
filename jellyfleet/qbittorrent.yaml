@@ -1,0 +1,70 @@
+services:
+  qbittorrent:
+    image: ghcr.io/hotio/qbittorrent:release-v5
+    restart: unless-stopped
+    container_name: qbittorrent
+    hostname: qbittorrent.internal
+
+    labels:
+      traefik.enable: true
+      traefik.http.routers.qbittorrent.rule: Host(`qbittorrent.xn--krver-jua.it`)
+      traefik.http.routers.qbittorrent.entrypoints: websecure
+      traefik.http.routers.qbittorrent.tls: true
+      traefik.http.routers.qbittorrent.middlewares: error-pages-middleware
+      traefik.http.routers.qbittorrent.service: qbittorrent
+      traefik.http.services.qbittorrent.loadBalancer.server.port: 8080
+
+    environment:
+      - PUID=1109
+      - PGID=1001
+      - UMASK=002
+      - TZ=Europe/Amsterdam
+
+      # VPN config
+      - VPN_ENABLED=true
+      - VPN_CONF=wg0-proton
+      - VPN_PROVIDER=proton 
+      - VPN_LAN_NETWORK=10.0.8.1/24
+      - VPN_LAN_LEAK_ENABLED=false
+      - VPN_AUTO_PORT_FORWARD=true
+      - VPN_HEALTHCHECK_ENABLED=true
+
+    volumes:
+      - type: bind
+        source: ${APPDATA_LOCATION:?No appdata directory configured}/qbittorrent
+        target: /config
+      - type: bind
+        source: ${DATA_LOCATION:?No data directory configured}/torrents
+        target: /data/torrents
+        bind:
+          create_host_path: true
+
+    cap_add:
+      - NET_ADMIN
+
+
+  qui:
+    image: ghcr.io/hotio/qui:release-v1
+    restart: unless-stopped
+    container_name: qui
+    hostname: qui.internal
+
+    labels:
+      traefik.enable: true
+      traefik.http.routers.qui.rule: Host(`qui.xn--krver-jua.it`)
+      traefik.http.routers.qui.entrypoints: websecure
+      traefik.http.routers.qui.tls: true
+      traefik.http.routers.qui.middlewares: error-pages-middleware
+      traefik.http.routers.qui.service: qui
+      traefik.http.services.qui.loadBalancer.server.port: 7476
+
+    environment:
+      - PUID=1110
+      - PGID=1001
+      - UMASK=002
+      - TZ=Europe/Amsterdam
+
+    volumes:
+      - type: bind
+        source: ${APPDATA_LOCATION:?No appdata directory configured}/qui
+        target: /config

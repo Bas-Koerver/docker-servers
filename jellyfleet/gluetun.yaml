@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  gluetun:
+    image: ghcr.io/qdm12/gluetun
+    restart: unless-stopped
+    container_name: gluetun
+    environment:
+      - VPN_SERVICE_PROVIDER=protonvpn
+      # - VPN_TYPE=openvpn
+      - OPENVPN_USER_SECRETFILE=/run/secrets/user
+      - OPENVPN_PASSWORD_SECRETFILE=/run/secrets/password
+
+      # See https://github.com/qdm12/gluetun-wiki/blob/main/setup/servers.md#update-the-vpn-servers-list
+      - UPDATER_PERIOD=24h
+      - TZ=Europe/Amsterdam
+      - FREE_ONLY=true
+      - SERVER_COUNTRIES=Netherlands
+    secrets:
+      - source: protonvpn_user
+        target: user
+      - source: protonvpn_password
+        target: password
+    cap_add:
+      - NET_ADMIN
