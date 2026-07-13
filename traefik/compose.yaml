@@ -57,6 +57,13 @@ services:
         target: 443
         protocol: udp
         app_protocol: https
+    
+    healthcheck:
+      test: ["CMD-SHELL", "traefik healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
 
   error-pages:
@@ -77,7 +84,7 @@ services:
       traefik.http.middlewares.error-pages-middleware.errors.service: error-pages-service
       traefik.http.middlewares.error-pages-middleware.errors.query: /{status}
       # define service properties
-      traefik.http.services.error-pages-service.loadbalancer.server.port: 8080
+      traefik.http.services.error-pages-service.loadBalancer.server.port: 8080
 
     environment:
       TEMPLATE_NAME: ${TEMPLATE:-cats}
@@ -95,7 +102,7 @@ services:
       traefik.http.routers.whoami.entrypoints: websecure
       traefik.http.routers.whoami.tls: true
       traefik.http.routers.whoami.middlewares: error-pages-middleware
-      traefik.http.services.whoami.loadbalancer.server.port: 80
+      traefik.http.services.whoami.loadBalancer.server.port: 80
 
 
 secrets:

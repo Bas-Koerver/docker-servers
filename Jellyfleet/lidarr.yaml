@@ -12,7 +12,7 @@ services:
       traefik.http.routers.lidarr.tls: true
       traefik.http.routers.lidarr.middlewares: error-pages-middleware
       traefik.http.routers.lidarr.service: lidarr
-      traefik.http.services.lidarr.loadbalancer.server.port: 8686
+      traefik.http.services.lidarr.loadBalancer.server.port: 8686
 
     environment:
       - PUID=1105

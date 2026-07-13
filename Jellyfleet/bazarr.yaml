@@ -11,7 +11,7 @@ services:
       traefik.http.routers.bazarr.tls: true
       traefik.http.routers.bazarr.middlewares: error-pages-middleware
       traefik.http.routers.bazarr.service: bazarr
-      traefik.http.services.bazarr.loadbalancer.server.port: 6767
+      traefik.http.services.bazarr.loadBalancer.server.port: 6767
 
     environment:
       - PUID=1108

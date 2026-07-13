@@ -12,7 +12,7 @@ services:
       traefik.http.routers.seerr.tls: true
       traefik.http.routers.seerr.middlewares: error-pages-middleware
       traefik.http.routers.seerr.service: seerr
-      traefik.http.services.seerr.loadbalancer.server.port: 5055
+      traefik.http.services.seerr.loadBalancer.server.port: 5055
 
     environment:
       - PUID=1102

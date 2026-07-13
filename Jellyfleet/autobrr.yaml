@@ -1,6 +1,6 @@
 services:
   autobrr:
-    image: ghcr.io/autobrr/autobrr:v1.38
+    image: ghcr.io/autobrr/autobrr:v1.81
     restart: unless-stopped
     container_name: autobrr
     hostname: autobrr.internal
@@ -12,7 +12,7 @@ services:
       traefik.http.routers.autobrr.tls: true
       traefik.http.routers.autobrr.middlewares: error-pages-middleware
       traefik.http.routers.autobrr.service: autobrr
-      traefik.http.services.autobrr.loadbalancer.server.port: 7474
+      traefik.http.services.autobrr.loadBalancer.server.port: 7474
 
     environment:
       - PUID=1107

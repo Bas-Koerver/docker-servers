@@ -25,7 +25,7 @@ services:
       traefik.http.routers.authentik.tls: true
       traefik.http.routers.authentik.middlewares: error-pages-middleware
       traefik.http.routers.authentik.service: authentik
-      traefik.http.services.authentik.loadbalancer.server.port: 9000
+      traefik.http.services.authentik.loadBalancer.server.port: 9000
     
     volumes:
       - type: bind
@@ -44,6 +44,19 @@ services:
     networks:
       - traefik
       - back-end
+
+    ports:
+      - name: "authentik-http"
+        published: 9000
+        target: 9000
+        protocol: tcp
+        app_protocol: http
+      
+      - name: "authentik-https"
+        published: 9443
+        target: 9443
+        protocol: tcp
+        app_protocol: https
 
 
   worker:
