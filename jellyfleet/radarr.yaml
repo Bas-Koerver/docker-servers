@@ -15,10 +15,10 @@ services:
       traefik.http.services.radarr.loadBalancer.server.port: 7878
 
     environment:
-      - PUID=1103
-      - PGID=1001
-      - UMASK=002
-      - TZ=Europe/Amsterdam
+      PUID: 1103
+      PGID: 1001
+      UMASK: 002
+      TZ: Europe/Amsterdam
 
     volumes:
       - type: bind

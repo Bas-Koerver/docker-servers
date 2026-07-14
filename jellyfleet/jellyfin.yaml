@@ -15,10 +15,10 @@ services:
       traefik.http.services.jellyfin.loadBalancer.server.port: 8096
 
     environment:
-      - PUID=1101
-      - PGID=1001
-      - UMASK=002
-      - TZ=Europe/Amsterdam
+      PUID: 1101
+      PGID: 1001
+      UMASK: 002
+      TZ: Europe/Amsterdam
 
     volumes:
       - type: bind

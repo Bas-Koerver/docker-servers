@@ -15,12 +15,33 @@ services:
       traefik.http.services.autobrr.loadBalancer.server.port: 7474
 
     environment:
-      - PUID=1107
-      - PGID=1001
-      - UMASK=002
-      - TZ=Europe/Amsterdam
+      PUID: 1107
+      PGID: 1001
+      UMASK: 002
+      TZ: Europe/Amsterdam
+
+      # OIDC
+      AUTOBRR__OIDC_ENABLED: "true"
+      AUTOBRR__OIDC_ISSUER: ${AUTOBRR_CONFIGURATION_ISSUER:?No OpenID Configuration Issuer configured}
+      AUTOBRR__OIDC_CLIENT_ID: /run/secrets/client_id
+      AUTOBRR__OIDC_CLIENT_SECRET_FILE: /run/secrets/client_secret
+      AUTOBRR__OIDC_REDIRECT_URL: ${AUTOBRR_REDIRECT_URL:?No OpenID Redirect URL configured}
+      AUTOBRR__OIDC_DISABLE_BUILT_IN_LOGIN: "false"
 
     volumes:
       - type: bind
         source: ${APPDATA_LOCATION:?No appdata directory configured}/autobrr
         target: /config
+
+    secrets:
+      - source: AUTOBRR_OIDC_CLIENT_ID
+        target: client_id
+      - source: AUTOBRR_OIDC_CLIENT_SECRET
+        target: client_secret
+
+
+secrets:
+  AUTOBRR_OIDC_CLIENT_ID:
+    file: ${SECRETS_LOCATION:?No secrets folder configured}/${AUTOBRR_OIDC_CLIENT_ID_FILE:?No OIDC client ID file configured}
+  AUTOBRR_OIDC_CLIENT_SECRET:
+    file: ${SECRETS_LOCATION:?No secrets folder configured}/${AUTOBRR_OIDC_CLIENT_SECRET_FILE:?No OIDC client secret file configured}

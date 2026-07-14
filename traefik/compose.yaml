@@ -17,9 +17,9 @@ services:
       traefik.http.routers.dashboard.middlewares: authentik-auth@file, error-pages-middleware
 
     environment:
-      - CF_API_EMAIL_FILE=/run/secrets/email
-      - CF_DNS_API_TOKEN_FILE=/run/secrets/dns_token
-      - CF_ZONE_API_TOKEN_FILE=/run/secrets/zone_token
+      CF_API_EMAIL_FILE: /run/secrets/email
+      CF_DNS_API_TOKEN_FILE: /run/secrets/dns_token
+      CF_ZONE_API_TOKEN_FILE: /run/secrets/zone_token
 
     volumes:
       - type: bind
@@ -88,8 +88,8 @@ services:
 
     environment:
       TEMPLATE_NAME: ${TEMPLATE:-cats}
-      DISABLE_L10N: ${DISABLE_L10N:-true}
-      SHOW_DETAILS: ${SHOW_DETAILS:-true}
+      DISABLE_L10N: ${DISABLE_L10N:-"true"}
+      SHOW_DETAILS: ${SHOW_DETAILS:-"true"}
 
 
   whoami:

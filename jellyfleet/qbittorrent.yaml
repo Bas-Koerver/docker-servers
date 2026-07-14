@@ -15,19 +15,19 @@ services:
       traefik.http.services.qbittorrent.loadBalancer.server.port: 8080
 
     environment:
-      - PUID=1109
-      - PGID=1001
-      - UMASK=002
-      - TZ=Europe/Amsterdam
+      PUID: 1109
+      PGID: 1001
+      UMASK: 002
+      TZ: Europe/Amsterdam
 
       # VPN config
-      - VPN_ENABLED=true
-      - VPN_CONF=wg0-proton
-      - VPN_PROVIDER=proton 
-      - VPN_LAN_NETWORK=10.0.8.1/24
-      - VPN_LAN_LEAK_ENABLED=false
-      - VPN_AUTO_PORT_FORWARD=true
-      - VPN_HEALTHCHECK_ENABLED=true
+      VPN_ENABLED: "true"
+      VPN_CONF: wg0-proton
+      VPN_PROVIDER: proton 
+      VPN_LAN_NETWORK: 10.0.8.1/24
+      VPN_LAN_LEAK_ENABLED: "false"
+      VPN_AUTO_PORT_FORWARD: "true"
+      VPN_HEALTHCHECK_ENABLED: "true"
 
     volumes:
       - type: bind

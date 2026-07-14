@@ -15,10 +15,10 @@ services:
       traefik.http.services.seerr.loadBalancer.server.port: 5055
 
     environment:
-      - PUID=1102
-      - PGID=1001
-      - UMASK=002
-      - TZ=Europe/Amsterdam
+      PUID: 1102
+      PGID: 1001
+      UMASK: 002
+      TZ: Europe/Amsterdam
 
     volumes:
       - type: bind
