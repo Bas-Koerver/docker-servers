@@ -45,19 +45,6 @@ services:
       - traefik
       - back-end
 
-    ports:
-      - name: "authentik-http"
-        published: 9000
-        target: 9000
-        protocol: tcp
-        app_protocol: http
-      
-      - name: "authentik-https"
-        published: 9443
-        target: 9443
-        protocol: tcp
-        app_protocol: https
-
 
   worker:
     image: ghcr.io/goauthentik/server:2026.5
