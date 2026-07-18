@@ -10,13 +10,6 @@ services:
       postgresql:
         condition: service_healthy
 
-    environment:
-      AUTHENTIK_POSTGRESQL__HOST: postgresql
-      AUTHENTIK_POSTGRESQL__NAME: authentik
-      AUTHENTIK_POSTGRESQL__USER: authentik
-      AUTHENTIK_POSTGRESQL__PASSWORD: file:///run/secrets/pg_pass
-      AUTHENTIK_SECRET_KEY: file:///run/secrets/secret_key
-    
     labels:
       traefik.enable: true
       traefik.docker.network: traefik
@@ -26,6 +19,13 @@ services:
       traefik.http.routers.authentik.middlewares: error-pages-middleware
       traefik.http.routers.authentik.service: authentik
       traefik.http.services.authentik.loadBalancer.server.port: 9000
+
+    environment:
+      AUTHENTIK_POSTGRESQL__HOST: postgresql
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__USER: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: file:///run/secrets/pg_pass
+      AUTHENTIK_SECRET_KEY: file:///run/secrets/secret_key    
     
     volumes:
       - type: bind
