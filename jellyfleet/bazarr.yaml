@@ -1,11 +1,17 @@
 services:
   bazarr:
     image: ghcr.io/hotio/bazarr:release-v1
+    restart: unless-stopped
     container_name: bazarr
     hostname: bazarr.internal
 
+    depends_on:
+      postgresql-bazarr:
+        condition: service_healthy
+
     labels:
       traefik.enable: true
+      traefik.docker.network: traefik
       traefik.http.routers.bazarr.rule: Host(`bazarr.xn--krver-jua.it`)
       traefik.http.routers.bazarr.entrypoints: websecure
       traefik.http.routers.bazarr.tls: true
@@ -19,12 +25,67 @@ services:
       UMASK: 002
       TZ: Europe/Amsterdam
 
+      # Database
+      POSTGRES_ENABLED: "true"
+      POSTGRES_HOST: postgresql-bazarr
+      POSTGRES_PORT: 5432
+      POSTGRES_DATABASE: bazarr
+      POSTGRES_USERNAME: bazarr
+      POSTGRES_PASSWORD: ${BAZARR_PG_PASS:?No Bazarr database password configured}
+
     volumes:
       - type: bind
-        source: ${APPDATA_LOCATION:?No appdata directory configured}/bazarr
+        source: ${APPDATA_LOCATION:?No appdata directory configured}/bazarr/config
         target: /config
       - type: bind
         source: ${DATA_LOCATION:?No data directory configured}/media
         target: /data/media
         bind:
           create_host_path: true
+
+    networks:
+      - traefik
+      - back-end_bazarr
+
+
+  postgresql-bazarr:
+      image: docker.io/library/postgres:18-alpine
+      restart: unless-stopped
+      container_name: postgresql-bazarr
+
+      environment:
+        POSTGRES_DB: bazarr
+        POSTGRES_USER: bazarr
+        POSTGRES_PASSWORD: ${BAZARR_PG_PASS:?No Bazarr database password configured}
+
+      volumes:
+        - type: bind
+          source: ${APPDATA_LOCATION:?No appdata directory configured}/bazarr/postgresql
+          target: /var/lib/postgresql/
+
+      networks:
+        - back-end_bazarr
+
+      healthcheck:
+        test: [
+          "CMD-SHELL",
+          "pg_isready -q --username \"$${POSTGRES_USER}\" --dbname postgres"
+          ]
+        interval: 30s
+        timeout: 5s
+        retries: 5
+        start_period: 20s
+
+
+  # secrets:
+    # BAZARR_OIDC_CLIENT_ID:
+    #   file: ${SECRETS_LOCATION:?No secrets folder configured}/${BAZARR_OIDC_CLIENT_ID_FILE:?No OIDC client ID file configured}
+    # BAZARR_OIDC_CLIENT_SECRET:
+    #   file: ${SECRETS_LOCATION:?No secrets folder configured}/${BAZARR_OIDC_CLIENT_SECRET_FILE:?No OIDC client secret file configured}
+    # BAZARR_POSTGRES_PASSWORD:
+    #   file: ${SECRETS_LOCATION:?No secrets folder configured}/${BAZARR_PG_PASS_FILE:?No Bazarr database password file configured}
+
+
+networks:
+  back-end_bazarr:
+    internal: true

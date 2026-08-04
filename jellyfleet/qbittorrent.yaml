@@ -31,7 +31,7 @@ services:
 
     volumes:
       - type: bind
-        source: ${APPDATA_LOCATION:?No appdata directory configured}/qbittorrent
+        source: ${APPDATA_LOCATION:?No appdata directory configured}/qbittorrent/config
         target: /config
       - type: bind
         source: ${DATA_LOCATION:?No data directory configured}/torrents
@@ -59,12 +59,29 @@ services:
       traefik.http.services.qui.loadBalancer.server.port: 7476
 
     environment:
-      - PUID=1110
-      - PGID=1001
-      - UMASK=002
-      - TZ=Europe/Amsterdam
+      PUID: 1110
+      PGID: 1001
+      UMASK: 002
+      TZ: Europe/Amsterdam
+
+      # OIDC
+      QUI__OIDC_ENABLED: "true"
+      QUI__OIDC_ISSUER: ${QUI_CONFIGURATION_ISSUER:?No OpenID Configuration Issuer configured}
+      QUI__OIDC_CLIENT_ID: ${QUI_OIDC_CLIENT_ID:?No OIDC client ID configured}
+      QUI__OIDC_CLIENT_SECRET_FILE: /run/secrets/client_secret
+      QUI__OIDC_REDIRECT_URL: ${QUI_REDIRECT_URL:?No OpenID Redirect URL configured}
+      QUI__OIDC_DISABLE_BUILT_IN_LOGIN: "false"
 
     volumes:
       - type: bind
-        source: ${APPDATA_LOCATION:?No appdata directory configured}/qui
+        source: ${APPDATA_LOCATION:?No appdata directory configured}/qui/config
         target: /config
+
+    secrets:
+      - source: QUI_OIDC_CLIENT_SECRET
+        target: client_secret
+
+
+secrets:
+  QUI_OIDC_CLIENT_SECRET:
+    file: ${SECRETS_LOCATION:?No secrets folder configured}/${QUI_OIDC_CLIENT_SECRET_FILE:?No OIDC client secret file configured}

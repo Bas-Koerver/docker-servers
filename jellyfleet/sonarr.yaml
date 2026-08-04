@@ -5,12 +5,18 @@ services:
     container_name: sonarr
     hostname: sonarr.internal
 
+    depends_on:
+      postgresql-sonarr:
+        condition: service_healthy
+
     labels:
       traefik.enable: true
+      traefik.docker.network: traefik
       traefik.http.routers.sonarr.rule: Host(`sonarr.xn--krver-jua.it`)
       traefik.http.routers.sonarr.entrypoints: websecure
       traefik.http.routers.sonarr.tls: true
       traefik.http.routers.sonarr.middlewares: error-pages-middleware
+      # traefik.http.routers.sonarr.middlewares: authentik-auth@file, error-pages-middleware
       traefik.http.routers.sonarr.service: sonarr
       traefik.http.services.sonarr.loadBalancer.server.port: 8989
 
@@ -20,12 +26,85 @@ services:
       UMASK: 002
       TZ: Europe/Amsterdam
 
+      # Database
+      SONARR__POSTGRES__HOST: postgresql-sonarr
+      SONARR__POSTGRES__PORT: 5432
+      SONARR__POSTGRES__USER: sonarr
+      SONARR__POSTGRES__MAINDB: sonarr-main
+      SONARR__POSTGRES__LOGDB: sonarr-log
+      SONARR__POSTGRES__PASSWORD: ${SONARR_PG_PASS:?No Sonarr database password configured}
+
     volumes:
       - type: bind
-        source: ${APPDATA_LOCATION:?No appdata directory configured}/sonarr
+        source: ${APPDATA_LOCATION:?No appdata directory configured}/sonarr/config
         target: /config
       - type: bind
         source: ${DATA_LOCATION:?No data directory configured}
         target: /data
         bind:
           create_host_path: true
+
+    networks:
+      - traefik
+      - back-end_sonarr
+
+    healthcheck:
+      test: [
+        "CMD",
+        "wget",
+        "-q",
+        "--spider",
+        "http://127.0.0.1:8989/ping"
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+
+  postgresql-sonarr:
+      image: docker.io/library/postgres:18-alpine
+      restart: unless-stopped
+      container_name: postgresql-sonarr
+
+      environment:
+        POSTGRES_DB: "sonarr-main"
+        POSTGRES_ADDITIONAL_DATABASES: "sonarr-log"
+        POSTGRES_USER: sonarr
+        POSTGRES_PASSWORD: ${SONARR_PG_PASS:?No Sonarr database password configured}
+
+      volumes:
+        - type: bind
+          source: ${APPDATA_LOCATION:?No appdata directory configured}/sonarr/postgresql
+          target: /var/lib/postgresql/
+        - type: bind
+          source: ./create-multiple-postgresql-databases.sh
+          target: /docker-entrypoint-initdb.d/create-multiple-postgresql-databases.sh
+          read_only: true
+
+      networks:
+        - back-end_sonarr
+
+      healthcheck:
+        test: [
+          "CMD-SHELL",
+          "pg_isready -q --username \"$${POSTGRES_USER}\" --dbname postgres"
+          ]
+        interval: 30s
+        timeout: 5s
+        retries: 5
+        start_period: 20s
+
+
+  # secrets:
+    # SONARR_OIDC_CLIENT_ID:
+    #   file: ${SECRETS_LOCATION:?No secrets folder configured}/${SONARR_OIDC_CLIENT_ID_FILE:?No OIDC client ID file configured}
+    # SONARR_OIDC_CLIENT_SECRET:
+    #   file: ${SECRETS_LOCATION:?No secrets folder configured}/${SONARR_OIDC_CLIENT_SECRET_FILE:?No OIDC client secret file configured}
+    # SONARR_POSTGRES_PASSWORD:
+    #   file: ${SECRETS_LOCATION:?No secrets folder configured}/${SONARR_PG_PASS_FILE:?No Sonarr database password file configured}
+
+
+networks:
+  back-end_sonarr:
+    internal: true

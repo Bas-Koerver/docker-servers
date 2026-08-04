@@ -5,12 +5,18 @@ services:
     container_name: radarr
     hostname: radarr.internal
 
+    depends_on:
+      postgresql-radarr:
+        condition: service_healthy
+
     labels:
       traefik.enable: true
+      traefik.docker.network: traefik
       traefik.http.routers.radarr.rule: Host(`radarr.xn--krver-jua.it`)
       traefik.http.routers.radarr.entrypoints: websecure
       traefik.http.routers.radarr.tls: true
       traefik.http.routers.radarr.middlewares: error-pages-middleware
+      # traefik.http.routers.radarr.middlewares: authentik-auth@file, error-pages-middleware
       traefik.http.routers.radarr.service: radarr
       traefik.http.services.radarr.loadBalancer.server.port: 7878
 
@@ -20,12 +26,85 @@ services:
       UMASK: 002
       TZ: Europe/Amsterdam
 
+      # Database
+      RADARR__POSTGRES__HOST: postgresql-radarr
+      RADARR__POSTGRES__PORT: 5432
+      RADARR__POSTGRES__USER: radarr
+      RADARR__POSTGRES__MAINDB: radarr-main
+      RADARR__POSTGRES__LOGDB: radarr-log
+      RADARR__POSTGRES__PASSWORD: ${RADARR_PG_PASS:?No Radarr database password configured}
+
     volumes:
       - type: bind
-        source: ${APPDATA_LOCATION:?No appdata directory configured}/radarr
+        source: ${APPDATA_LOCATION:?No appdata directory configured}/radarr/config
         target: /config
       - type: bind
         source: ${DATA_LOCATION:?No data directory configured}
         target: /data
         bind:
           create_host_path: true
+
+    networks:
+      - traefik
+      - back-end_radarr
+
+    healthcheck:
+      test: [
+        "CMD",
+        "wget",
+        "-q",
+        "--spider",
+        "http://127.0.0.1:7878/ping"
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+
+  postgresql-radarr:
+    image: docker.io/library/postgres:18-alpine
+    restart: unless-stopped
+    container_name: postgresql-radarr
+
+    environment:
+      POSTGRES_DB: "radarr-main"
+      POSTGRES_ADDITIONAL_DATABASES: "radarr-log"
+      POSTGRES_USER: radarr
+      POSTGRES_PASSWORD: ${RADARR_PG_PASS:?No Radarr database password configured}
+
+    volumes:
+      - type: bind
+        source: ${APPDATA_LOCATION:?No appdata directory configured}/radarr/postgresql
+        target: /var/lib/postgresql/
+      - type: bind
+        source: ./create-multiple-postgresql-databases.sh
+        target: /docker-entrypoint-initdb.d/create-multiple-postgresql-databases.sh
+        read_only: true
+
+    networks:
+      - back-end_radarr
+
+    healthcheck:
+      test: [
+        "CMD-SHELL",
+        "pg_isready -q --username \"$${POSTGRES_USER}\" --dbname postgres"
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+
+# secrets:
+  # RADARR_OIDC_CLIENT_ID:
+  #   file: ${SECRETS_LOCATION:?No secrets folder configured}/${RADARR_OIDC_CLIENT_ID_FILE:?No OIDC client ID file configured}
+  # RADARR_OIDC_CLIENT_SECRET:
+  #   file: ${SECRETS_LOCATION:?No secrets folder configured}/${RADARR_OIDC_CLIENT_SECRET_FILE:?No OIDC client secret file configured}
+  # RADARR_POSTGRES_PASSWORD:
+  #   file: ${SECRETS_LOCATION:?No secrets folder configured}/${RADARR_PG_PASS_FILE:?No Radarr database password file configured}
+
+
+networks:
+  back-end_radarr:
+    internal: true

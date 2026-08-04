@@ -113,7 +113,10 @@ services:
       - back-end
 
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -d authentik -U authentik"]
+      test: [
+        "CMD-SHELL",
+        "pg_isready -q --username \"$${POSTGRES_USER}\" --dbname postgres"
+        ]
       interval: 30s
       timeout: 5s
       retries: 5

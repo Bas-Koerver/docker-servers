@@ -5,12 +5,18 @@ services:
     container_name: prowlarr
     hostname: prowlarr.internal
 
+    depends_on:
+      postgresql-prowlarr:
+        condition: service_healthy
+
     labels:
       traefik.enable: true
+      traefik.docker.network: traefik
       traefik.http.routers.prowlarr.rule: Host(`prowlarr.xn--krver-jua.it`)
       traefik.http.routers.prowlarr.entrypoints: websecure
       traefik.http.routers.prowlarr.tls: true
       traefik.http.routers.prowlarr.middlewares: error-pages-middleware
+      # traefik.http.routers.prowlarr.middlewares: authentik-auth@file, error-pages-middleware
       traefik.http.routers.prowlarr.service: prowlarr
       traefik.http.services.prowlarr.loadBalancer.server.port: 9696
 
@@ -20,7 +26,80 @@ services:
       UMASK: 002
       TZ: Europe/Amsterdam
 
+      # Database
+      PROWLARR__POSTGRES__HOST: postgresql-prowlarr
+      PROWLARR__POSTGRES__PORT: 5432
+      PROWLARR__POSTGRES__USER: prowlarr
+      PROWLARR__POSTGRES__MAINDB: prowlarr-main
+      PROWLARR__POSTGRES__LOGDB: prowlarr-log
+      PROWLARR__POSTGRES__PASSWORD: ${PROWLARR_PG_PASS:?No Prowlarr database password configured}
+
     volumes:
       - type: bind
-        source: ${APPDATA_LOCATION:?No appdata directory configured}/prowlarr
+        source: ${APPDATA_LOCATION:?No appdata directory configured}/prowlarr/config
         target: /config
+
+    networks:
+      - traefik
+      - back-end_prowlarr
+
+    healthcheck:
+      test: [
+        "CMD",
+        "wget",
+        "-q",
+        "--spider",
+        "http://127.0.0.1:9696/ping"
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+
+  postgresql-prowlarr:
+      image: docker.io/library/postgres:18-alpine
+      restart: unless-stopped
+      container_name: postgresql-prowlarr
+
+      environment:
+        POSTGRES_DB: "prowlarr-main"
+        POSTGRES_ADDITIONAL_DATABASES: "prowlarr-log"
+        POSTGRES_USER: prowlarr
+        POSTGRES_PASSWORD: ${PROWLARR_PG_PASS:?No Prowlarr database password configured}
+
+      volumes:
+        - type: bind
+          source: ${APPDATA_LOCATION:?No appdata directory configured}/prowlarr/postgresql
+          target: /var/lib/postgresql/
+        - type: bind
+          source: ./create-multiple-postgresql-databases.sh
+          target: /docker-entrypoint-initdb.d/create-multiple-postgresql-databases.sh
+          read_only: true
+
+      networks:
+        - back-end_prowlarr
+
+      healthcheck:
+        test: [
+          "CMD-SHELL",
+          "pg_isready -q --username \"$${POSTGRES_USER}\" --dbname postgres"
+          ]
+        interval: 30s
+        timeout: 5s
+        retries: 5
+        start_period: 20s
+
+
+  # secrets:
+    # PROWLARR_OIDC_CLIENT_ID:
+    #   file: ${SECRETS_LOCATION:?No secrets folder configured}/${PROWLARR_OIDC_CLIENT_ID_FILE:?No OIDC client ID file configured}
+    # PROWLARR_OIDC_CLIENT_SECRET:
+    #   file: ${SECRETS_LOCATION:?No secrets folder configured}/${PROWLARR_OIDC_CLIENT_SECRET_FILE:?No OIDC client secret file configured}
+    # PROWLARR_POSTGRES_PASSWORD:
+    #   file: ${SECRETS_LOCATION:?No secrets folder configured}/${PROWLARR_PG_PASS_FILE:?No Prowlarr database password file configured}
+
+
+networks:
+  back-end_prowlarr:
+    internal: true

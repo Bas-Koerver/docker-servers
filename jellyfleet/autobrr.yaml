@@ -4,9 +4,15 @@ services:
     restart: unless-stopped
     container_name: autobrr
     hostname: autobrr.internal
+    user: 1107:1001
+
+    depends_on:
+      postgresql-autobrr:
+        condition: service_healthy
 
     labels:
       traefik.enable: true
+      traefik.docker.network: traefik
       traefik.http.routers.autobrr.rule: Host(`autobrr.xn--krver-jua.it`)
       traefik.http.routers.autobrr.entrypoints: websecure
       traefik.http.routers.autobrr.tls: true
@@ -15,10 +21,16 @@ services:
       traefik.http.services.autobrr.loadBalancer.server.port: 7474
 
     environment:
-      PUID: 1107
-      PGID: 1001
-      UMASK: 002
       TZ: Europe/Amsterdam
+      
+      AUTOBRR__HOST: "0.0.0.0"
+
+      # Database
+      AUTOBRR__DATABASE_TYPE: postgres
+      AUTOBRR__POSTGRES_HOST: postgresql-autobrr
+      AUTOBRR__POSTGRES_DATABASE: autobrr
+      AUTOBRR__POSTGRES_USER: autobrr
+      AUTOBRR__POSTGRES_PASSWORD_FILE: /run/secrets/pg_pass
 
       # OIDC
       AUTOBRR__OIDC_ENABLED: "true"
@@ -28,9 +40,13 @@ services:
       AUTOBRR__OIDC_REDIRECT_URL: ${AUTOBRR_REDIRECT_URL:?No OpenID Redirect URL configured}
       AUTOBRR__OIDC_DISABLE_BUILT_IN_LOGIN: "false"
 
+      # Metrics
+      AUTOBRR__METRICS_ENABLED: "true"
+      AUTOBRR__METRICS_HOST: "0.0.0.0"
+
     volumes:
       - type: bind
-        source: ${APPDATA_LOCATION:?No appdata directory configured}/autobrr
+        source: ${APPDATA_LOCATION:?No appdata directory configured}/autobrr/config
         target: /config
 
     secrets:
@@ -38,6 +54,61 @@ services:
         target: client_id
       - source: AUTOBRR_OIDC_CLIENT_SECRET
         target: client_secret
+      - source: AUTOBRR_POSTGRES_PASSWORD
+        target: pg_pass
+
+    networks:
+      - traefik
+      - back-end_autobrr
+
+    healthcheck:
+      test: [
+        "CMD",
+        "curl",
+        "--fail",
+        "--silent",
+        "--show-error",
+        "--max-time",
+        "4",
+        "http://127.0.0.1:7474/api/healthz/readiness"
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+  
+
+  postgresql-autobrr:
+    image: docker.io/library/postgres:18-alpine
+    restart: unless-stopped
+    container_name: postgresql-autobrr
+
+    environment:
+      POSTGRES_DB: autobrr
+      POSTGRES_USER: autobrr
+      POSTGRES_PASSWORD_FILE: /run/secrets/pg_pass
+
+    volumes:
+      - type: bind
+        source: ${APPDATA_LOCATION:?No appdata directory configured}/autobrr/postgresql
+        target: /var/lib/postgresql/
+
+    secrets:
+      - source: AUTOBRR_POSTGRES_PASSWORD
+        target: pg_pass
+
+    networks:
+      - back-end_autobrr
+
+    healthcheck:
+      test: [
+        "CMD-SHELL",
+        "pg_isready -q --username \"$${POSTGRES_USER}\" --dbname postgres"
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
 
 secrets:
@@ -45,3 +116,10 @@ secrets:
     file: ${SECRETS_LOCATION:?No secrets folder configured}/${AUTOBRR_OIDC_CLIENT_ID_FILE:?No OIDC client ID file configured}
   AUTOBRR_OIDC_CLIENT_SECRET:
     file: ${SECRETS_LOCATION:?No secrets folder configured}/${AUTOBRR_OIDC_CLIENT_SECRET_FILE:?No OIDC client secret file configured}
+  AUTOBRR_POSTGRES_PASSWORD:
+    file: ${SECRETS_LOCATION:?No secrets folder configured}/${AUTOBRR_PG_PASS_FILE:?No Autobrr database password file configured}
+
+
+networks:
+  back-end_autobrr:
+    internal: true

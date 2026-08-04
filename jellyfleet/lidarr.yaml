@@ -5,12 +5,18 @@ services:
     container_name: lidarr
     hostname: lidarr.internal
 
+    depends_on:
+      postgresql-lidarr:
+        condition: service_healthy
+
     labels:
       traefik.enable: true
+      traefik.docker.network: traefik
       traefik.http.routers.lidarr.rule: Host(`lidarr.xn--krver-jua.it`)
       traefik.http.routers.lidarr.entrypoints: websecure
       traefik.http.routers.lidarr.tls: true
       traefik.http.routers.lidarr.middlewares: error-pages-middleware
+      # traefik.http.routers.lidarr.middlewares: authentik-auth@file, error-pages-middleware
       traefik.http.routers.lidarr.service: lidarr
       traefik.http.services.lidarr.loadBalancer.server.port: 8686
 
@@ -20,12 +26,85 @@ services:
       UMASK: 002
       TZ: Europe/Amsterdam
 
+      # Database
+      LIDARR__POSTGRES__HOST: postgresql-lidarr
+      LIDARR__POSTGRES__PORT: 5432
+      LIDARR__POSTGRES__USER: lidarr
+      LIDARR__POSTGRES__MAINDB: lidarr-main
+      LIDARR__POSTGRES__LOGDB: lidarr-log
+      LIDARR__POSTGRES__PASSWORD: ${LIDARR_PG_PASS:?No Lidarr database password configured}
+
     volumes:
       - type: bind
-        source: ${APPDATA_LOCATION:?No appdata directory configured}/lidarr
+        source: ${APPDATA_LOCATION:?No appdata directory configured}/lidarr/config
         target: /config
       - type: bind
         source: ${DATA_LOCATION:?No data directory configured}
         target: /data
         bind:
           create_host_path: true
+
+    networks:
+      - traefik
+      - back-end_lidarr
+
+    healthcheck:
+      test: [
+        "CMD",
+        "wget",
+        "-q",
+        "--spider",
+        "http://127.0.0.1:8686/ping"
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+
+  postgresql-lidarr:
+    image: docker.io/library/postgres:18-alpine
+    restart: unless-stopped
+    container_name: postgresql-lidarr
+
+    environment:
+      POSTGRES_DB: "lidarr-main"
+      POSTGRES_ADDITIONAL_DATABASES: "lidarr-log"
+      POSTGRES_USER: lidarr
+      POSTGRES_PASSWORD: ${LIDARR_PG_PASS:?No Lidarr database password configured}
+
+    volumes:
+      - type: bind
+        source: ${APPDATA_LOCATION:?No appdata directory configured}/lidarr/postgresql
+        target: /var/lib/postgresql/
+      - type: bind
+        source: ./create-multiple-postgresql-databases.sh
+        target: /docker-entrypoint-initdb.d/create-multiple-postgresql-databases.sh
+        read_only: true
+
+    networks:
+      - back-end_lidarr
+
+    healthcheck:
+      test: [
+        "CMD-SHELL",
+        "pg_isready -q --username \"$${POSTGRES_USER}\" --dbname postgres"
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+
+# secrets:
+  # LIDARR_OIDC_CLIENT_ID:
+  #   file: ${SECRETS_LOCATION:?No secrets folder configured}/${LIDARR_OIDC_CLIENT_ID_FILE:?No OIDC client ID file configured}
+  # LIDARR_OIDC_CLIENT_SECRET:
+  #   file: ${SECRETS_LOCATION:?No secrets folder configured}/${LIDARR_OIDC_CLIENT_SECRET_FILE:?No OIDC client secret file configured}
+  # LIDARR_POSTGRES_PASSWORD:
+  #   file: ${SECRETS_LOCATION:?No secrets folder configured}/${LIDARR_PG_PASS_FILE:?No Lidarr database password file configured}
+
+
+networks:
+  back-end_lidarr:
+    internal: true
