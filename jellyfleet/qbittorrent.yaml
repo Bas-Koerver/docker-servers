@@ -38,6 +38,9 @@ services:
         target: /data/torrents
         bind:
           create_host_path: true
+    
+    networks:
+      - traefik
 
     cap_add:
       - NET_ADMIN
@@ -80,6 +83,9 @@ services:
     secrets:
       - source: QUI_OIDC_CLIENT_SECRET
         target: client_secret
+    
+    networks:
+      - traefik
 
 
 secrets:

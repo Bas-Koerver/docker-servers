@@ -15,8 +15,7 @@ services:
       traefik.http.routers.lidarr.rule: Host(`lidarr.xn--krver-jua.it`)
       traefik.http.routers.lidarr.entrypoints: websecure
       traefik.http.routers.lidarr.tls: true
-      traefik.http.routers.lidarr.middlewares: error-pages-middleware
-      # traefik.http.routers.lidarr.middlewares: authentik-auth@file, error-pages-middleware
+      traefik.http.routers.lidarr.middlewares: authentik-auth@file, error-pages-middleware
       traefik.http.routers.lidarr.service: lidarr
       traefik.http.services.lidarr.loadBalancer.server.port: 8686
 
@@ -25,6 +24,10 @@ services:
       PGID: 1001
       UMASK: 002
       TZ: Europe/Amsterdam
+
+      # Auth
+      LIDARR__AUTH__METHOD: External
+      LIDARR__AUTH__REQUIRED: Enabled
 
       # Database
       LIDARR__POSTGRES__HOST: postgresql-lidarr

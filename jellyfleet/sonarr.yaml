@@ -15,8 +15,7 @@ services:
       traefik.http.routers.sonarr.rule: Host(`sonarr.xn--krver-jua.it`)
       traefik.http.routers.sonarr.entrypoints: websecure
       traefik.http.routers.sonarr.tls: true
-      traefik.http.routers.sonarr.middlewares: error-pages-middleware
-      # traefik.http.routers.sonarr.middlewares: authentik-auth@file, error-pages-middleware
+      traefik.http.routers.sonarr.middlewares: authentik-auth@file, error-pages-middleware
       traefik.http.routers.sonarr.service: sonarr
       traefik.http.services.sonarr.loadBalancer.server.port: 8989
 
@@ -25,6 +24,10 @@ services:
       PGID: 1001
       UMASK: 002
       TZ: Europe/Amsterdam
+
+      # Auth
+      SONARR__AUTH__METHOD: External
+      SONARR__AUTH__REQUIRED: Enabled
 
       # Database
       SONARR__POSTGRES__HOST: postgresql-sonarr

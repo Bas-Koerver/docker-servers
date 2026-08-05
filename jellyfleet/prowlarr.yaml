@@ -15,8 +15,7 @@ services:
       traefik.http.routers.prowlarr.rule: Host(`prowlarr.xn--krver-jua.it`)
       traefik.http.routers.prowlarr.entrypoints: websecure
       traefik.http.routers.prowlarr.tls: true
-      traefik.http.routers.prowlarr.middlewares: error-pages-middleware
-      # traefik.http.routers.prowlarr.middlewares: authentik-auth@file, error-pages-middleware
+      traefik.http.routers.prowlarr.middlewares: authentik-auth@file, error-pages-middleware
       traefik.http.routers.prowlarr.service: prowlarr
       traefik.http.services.prowlarr.loadBalancer.server.port: 9696
 
@@ -25,6 +24,10 @@ services:
       PGID: 1001
       UMASK: 002
       TZ: Europe/Amsterdam
+
+      # Auth
+      PROWLARR__AUTH__METHOD: External
+      PROWLARR__AUTH__REQUIRED: Enabled
 
       # Database
       PROWLARR__POSTGRES__HOST: postgresql-prowlarr
