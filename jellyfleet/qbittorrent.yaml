@@ -36,8 +36,6 @@ services:
       - type: bind
         source: ${DATA_LOCATION:?No data directory configured}/torrents
         target: /data/torrents
-        bind:
-          create_host_path: true
     
     networks:
       - traefik
@@ -67,18 +65,35 @@ services:
       UMASK: 002
       TZ: Europe/Amsterdam
 
+      QUI__HOST: "0.0.0.0"
+
+      # Database
+      QUI__DATABASE_ENGINE: postgres
+      QUI__DATABASE_PORT: 5432
+      QUI__DATABASE_HOST: postgresql-qui
+      QUI__DATABASE_NAME: qui
+      QUI__DATABASE_USER: qui
+      QUI__DATABASE_PASSWORD_FILE: /run/secrets/pg_pass
+
       # OIDC
       QUI__OIDC_ENABLED: "true"
       QUI__OIDC_ISSUER: ${QUI_CONFIGURATION_ISSUER:?No OpenID Configuration Issuer configured}
       QUI__OIDC_CLIENT_ID: ${QUI_OIDC_CLIENT_ID:?No OIDC client ID configured}
       QUI__OIDC_CLIENT_SECRET_FILE: /run/secrets/client_secret
       QUI__OIDC_REDIRECT_URL: ${QUI_REDIRECT_URL:?No OpenID Redirect URL configured}
-      QUI__OIDC_DISABLE_BUILT_IN_LOGIN: "false"
+      QUI__OIDC_DISABLE_BUILT_IN_LOGIN: "true"
+
+      # Metrics
+      QUI__METRICS_ENABLED: "true"
+      QUI__METRICS_HOST: "0.0.0.0"
 
     volumes:
       - type: bind
         source: ${APPDATA_LOCATION:?No appdata directory configured}/qui/config
         target: /config
+      - type: bind
+        source: ${DATA_LOCATION:?No data directory configured}/torrents
+        target: /data/torrents
 
     secrets:
       - source: QUI_OIDC_CLIENT_SECRET

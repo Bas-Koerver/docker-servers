@@ -32,9 +32,9 @@ services:
       # Database
       RADARR__POSTGRES__HOST: postgresql-radarr
       RADARR__POSTGRES__PORT: 5432
-      RADARR__POSTGRES__USER: radarr
       RADARR__POSTGRES__MAINDB: radarr-main
       RADARR__POSTGRES__LOGDB: radarr-log
+      RADARR__POSTGRES__USER: radarr
       RADARR__POSTGRES__PASSWORD: ${RADARR_PG_PASS:?No Radarr database password configured}
 
     volumes:
@@ -44,8 +44,6 @@ services:
       - type: bind
         source: ${DATA_LOCATION:?No data directory configured}
         target: /data
-        bind:
-          create_host_path: true
 
     networks:
       - traefik

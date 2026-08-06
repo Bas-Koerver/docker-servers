@@ -26,6 +26,7 @@ services:
       # Database
       DB_TYPE: postgres
       DB_HOST: postgresql-seerr
+      DB_PORT: "5432"
       DB_NAME: seerr
       DB_USER: seerr
       DB_PASS: ${SEERR_PG_PASS:?No Seerr database password configured}

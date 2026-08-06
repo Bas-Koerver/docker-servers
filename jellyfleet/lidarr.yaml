@@ -32,9 +32,9 @@ services:
       # Database
       LIDARR__POSTGRES__HOST: postgresql-lidarr
       LIDARR__POSTGRES__PORT: 5432
-      LIDARR__POSTGRES__USER: lidarr
       LIDARR__POSTGRES__MAINDB: lidarr-main
       LIDARR__POSTGRES__LOGDB: lidarr-log
+      LIDARR__POSTGRES__USER: lidarr
       LIDARR__POSTGRES__PASSWORD: ${LIDARR_PG_PASS:?No Lidarr database password configured}
 
     volumes:
@@ -44,8 +44,7 @@ services:
       - type: bind
         source: ${DATA_LOCATION:?No data directory configured}
         target: /data
-        bind:
-          create_host_path: true
+
 
     networks:
       - traefik

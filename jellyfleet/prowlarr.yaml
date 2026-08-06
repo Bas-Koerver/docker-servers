@@ -32,9 +32,9 @@ services:
       # Database
       PROWLARR__POSTGRES__HOST: postgresql-prowlarr
       PROWLARR__POSTGRES__PORT: 5432
-      PROWLARR__POSTGRES__USER: prowlarr
       PROWLARR__POSTGRES__MAINDB: prowlarr-main
       PROWLARR__POSTGRES__LOGDB: prowlarr-log
+      PROWLARR__POSTGRES__USER: prowlarr
       PROWLARR__POSTGRES__PASSWORD: ${PROWLARR_PG_PASS:?No Prowlarr database password configured}
 
     volumes:

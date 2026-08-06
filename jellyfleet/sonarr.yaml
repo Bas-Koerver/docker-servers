@@ -32,9 +32,9 @@ services:
       # Database
       SONARR__POSTGRES__HOST: postgresql-sonarr
       SONARR__POSTGRES__PORT: 5432
-      SONARR__POSTGRES__USER: sonarr
       SONARR__POSTGRES__MAINDB: sonarr-main
       SONARR__POSTGRES__LOGDB: sonarr-log
+      SONARR__POSTGRES__USER: sonarr
       SONARR__POSTGRES__PASSWORD: ${SONARR_PG_PASS:?No Sonarr database password configured}
 
     volumes:
@@ -44,8 +44,6 @@ services:
       - type: bind
         source: ${DATA_LOCATION:?No data directory configured}
         target: /data
-        bind:
-          create_host_path: true
 
     networks:
       - traefik

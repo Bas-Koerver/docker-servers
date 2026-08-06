@@ -38,7 +38,7 @@ services:
       AUTOBRR__OIDC_CLIENT_ID_FILE: /run/secrets/client_id
       AUTOBRR__OIDC_CLIENT_SECRET_FILE: /run/secrets/client_secret
       AUTOBRR__OIDC_REDIRECT_URL: ${AUTOBRR_REDIRECT_URL:?No OpenID Redirect URL configured}
-      AUTOBRR__OIDC_DISABLE_BUILT_IN_LOGIN: "false"
+      AUTOBRR__OIDC_DISABLE_BUILT_IN_LOGIN: "true"
 
       # Metrics
       AUTOBRR__METRICS_ENABLED: "true"
