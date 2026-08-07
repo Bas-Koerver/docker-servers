@@ -45,7 +45,7 @@ services:
 
 
   qui:
-    image: ghcr.io/hotio/qui:release-v1
+    image:  ghcr.io/autobrr/qui:v1.25
     restart: unless-stopped
     container_name: qui
     hostname: qui.internal
