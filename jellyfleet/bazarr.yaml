@@ -8,6 +8,12 @@ services:
     depends_on:
       postgresql-bazarr:
         condition: service_healthy
+      jellyfin:
+        condition: service_healthy
+      radarr:
+        condition: service_healthy
+      sonarr:
+        condition: service_healthy
 
     labels:
       traefik.enable: true
@@ -44,35 +50,48 @@ services:
     networks:
       - traefik
       - back-end_bazarr
+    
+    healthcheck:
+      test: [
+        "CMD",
+        "wget",
+        "-q",
+        "--spider",
+        "http://127.0.0.1:6767/api/system/ping"
+        ]
+      start_period: 20s
+      timeout: 3s
+      interval: 15s
+      retries: 3
 
 
   postgresql-bazarr:
-      image: docker.io/library/postgres:18-alpine
-      restart: unless-stopped
-      container_name: postgresql-bazarr
+    image: docker.io/library/postgres:18-alpine
+    restart: unless-stopped
+    container_name: postgresql-bazarr
 
-      environment:
-        POSTGRES_DB: bazarr
-        POSTGRES_USER: bazarr
-        POSTGRES_PASSWORD: ${BAZARR_PG_PASS:?No Bazarr database password configured}
+    environment:
+      POSTGRES_DB: bazarr
+      POSTGRES_USER: bazarr
+      POSTGRES_PASSWORD: ${BAZARR_PG_PASS:?No Bazarr database password configured}
 
-      volumes:
-        - type: bind
-          source: ${APPDATA_LOCATION:?No appdata directory configured}/bazarr/postgresql
-          target: /var/lib/postgresql/
+    volumes:
+      - type: bind
+        source: ${APPDATA_LOCATION:?No appdata directory configured}/bazarr/postgresql
+        target: /var/lib/postgresql/
 
-      networks:
-        - back-end_bazarr
+    networks:
+      - back-end_bazarr
 
-      healthcheck:
-        test: [
-          "CMD-SHELL",
-          "pg_isready -q --username \"$${POSTGRES_USER}\" --dbname postgres"
-          ]
-        interval: 30s
-        timeout: 5s
-        retries: 5
-        start_period: 20s
+    healthcheck:
+      test: [
+        "CMD-SHELL",
+        "pg_isready -q --username \"$${POSTGRES_USER}\" --dbname postgres"
+        ]
+      start_period: 20s
+      timeout: 5s
+      interval: 30s
+      retries: 5
 
 
   # secrets:

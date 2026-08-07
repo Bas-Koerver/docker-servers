@@ -8,6 +8,10 @@ services:
     depends_on:
       postgresql-sonarr:
         condition: service_healthy
+      jellyfin:
+        condition: service_healthy
+      qbittorrent:
+        condition: service_healthy
 
     labels:
       traefik.enable: true
@@ -57,44 +61,44 @@ services:
         "--spider",
         "http://127.0.0.1:8989/ping"
         ]
-      interval: 30s
-      timeout: 5s
-      retries: 5
       start_period: 20s
+      timeout: 3s
+      interval: 15s
+      retries: 3
 
 
   postgresql-sonarr:
-      image: docker.io/library/postgres:18-alpine
-      restart: unless-stopped
-      container_name: postgresql-sonarr
+    image: docker.io/library/postgres:18-alpine
+    restart: unless-stopped
+    container_name: postgresql-sonarr
 
-      environment:
-        POSTGRES_DB: "sonarr-main"
-        POSTGRES_ADDITIONAL_DATABASES: "sonarr-log"
-        POSTGRES_USER: sonarr
-        POSTGRES_PASSWORD: ${SONARR_PG_PASS:?No Sonarr database password configured}
+    environment:
+      POSTGRES_DB: "sonarr-main"
+      POSTGRES_ADDITIONAL_DATABASES: "sonarr-log"
+      POSTGRES_USER: sonarr
+      POSTGRES_PASSWORD: ${SONARR_PG_PASS:?No Sonarr database password configured}
 
-      volumes:
-        - type: bind
-          source: ${APPDATA_LOCATION:?No appdata directory configured}/sonarr/postgresql
-          target: /var/lib/postgresql/
-        - type: bind
-          source: ./create-multiple-postgresql-databases.sh
-          target: /docker-entrypoint-initdb.d/create-multiple-postgresql-databases.sh
-          read_only: true
+    volumes:
+      - type: bind
+        source: ${APPDATA_LOCATION:?No appdata directory configured}/sonarr/postgresql
+        target: /var/lib/postgresql/
+      - type: bind
+        source: ./create-multiple-postgresql-databases.sh
+        target: /docker-entrypoint-initdb.d/create-multiple-postgresql-databases.sh
+        read_only: true
 
-      networks:
-        - back-end_sonarr
+    networks:
+      - back-end_sonarr
 
-      healthcheck:
-        test: [
-          "CMD-SHELL",
-          "pg_isready -q --username \"$${POSTGRES_USER}\" --dbname postgres"
-          ]
-        interval: 30s
-        timeout: 5s
-        retries: 5
-        start_period: 20s
+    healthcheck:
+      test: [
+        "CMD-SHELL",
+        "pg_isready -q --username \"$${POSTGRES_USER}\" --dbname postgres"
+        ]
+      start_period: 20s
+      timeout: 5s
+      interval: 30s
+      retries: 5
 
 
   # secrets:

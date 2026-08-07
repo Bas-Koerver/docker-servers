@@ -8,6 +8,10 @@ services:
     depends_on:
       postgresql-radarr:
         condition: service_healthy
+      jellyfin:
+        condition: service_healthy
+      qbittorrent:
+        condition: service_healthy
 
     labels:
       traefik.enable: true
@@ -57,10 +61,10 @@ services:
         "--spider",
         "http://127.0.0.1:7878/ping"
         ]
-      interval: 30s
-      timeout: 5s
-      retries: 5
       start_period: 20s
+      timeout: 3s
+      interval: 15s
+      retries: 3
 
 
   postgresql-radarr:
@@ -91,10 +95,10 @@ services:
         "CMD-SHELL",
         "pg_isready -q --username \"$${POSTGRES_USER}\" --dbname postgres"
         ]
-      interval: 30s
-      timeout: 5s
-      retries: 5
       start_period: 20s
+      timeout: 5s
+      interval: 30s
+      retries: 5
 
 
 # secrets:

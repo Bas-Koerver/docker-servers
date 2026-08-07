@@ -7,6 +7,7 @@ services:
 
     labels:
       traefik.enable: true
+      traefik.docker.network: traefik
       traefik.http.routers.qbittorrent.rule: Host(`qbittorrent.xn--krver-jua.it`)
       traefik.http.routers.qbittorrent.entrypoints: websecure
       traefik.http.routers.qbittorrent.tls: true
@@ -43,15 +44,44 @@ services:
     cap_add:
       - NET_ADMIN
 
+    healthcheck:
+      test: [
+        "CMD",
+        "curl",
+        "--fail",
+        "--silent",
+        "--show-error",
+        "--output", "/dev/null",
+        "http://127.0.0.1:8080/"
+      ]
+      start_period: 20s
+      timeout: 3s
+      interval: 15s
+      retries: 3
+
 
   qui:
     image:  ghcr.io/autobrr/qui:v1.25
     restart: unless-stopped
     container_name: qui
     hostname: qui.internal
+    user: 1110:1001
+
+    depends_on:
+      postgresql-qui:
+        condition: service_healthy
+      radarr:
+        condition: service_healthy
+      sonarr:
+        condition: service_healthy
+      prowlarr:
+        condition: service_healthy
+      qbittorrent:
+        condition: service_healthy
 
     labels:
       traefik.enable: true
+      traefik.docker.network: traefik
       traefik.http.routers.qui.rule: Host(`qui.xn--krver-jua.it`)
       traefik.http.routers.qui.entrypoints: websecure
       traefik.http.routers.qui.tls: true
@@ -60,8 +90,6 @@ services:
       traefik.http.services.qui.loadBalancer.server.port: 7476
 
     environment:
-      PUID: 1110
-      PGID: 1001
       UMASK: 002
       TZ: Europe/Amsterdam
 
@@ -98,9 +126,12 @@ services:
     secrets:
       - source: QUI_OIDC_CLIENT_SECRET
         target: client_secret
+      - source: QUI_POSTGRES_PASSWORD
+        target: pg_pass
     
     networks:
       - traefik
+      - back-end_qui
 
   
   postgresql-qui:
@@ -130,10 +161,10 @@ services:
         "CMD-SHELL",
         "pg_isready -q --username \"$${POSTGRES_USER}\" --dbname postgres"
         ]
-      interval: 30s
-      timeout: 5s
-      retries: 5
       start_period: 20s
+      timeout: 5s
+      interval: 30s
+      retries: 5
 
 
 secrets:
