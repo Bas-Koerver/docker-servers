@@ -1,75 +1,76 @@
-qui:
-  image:  ghcr.io/autobrr/qui:v1.25
-  restart: unless-stopped
-  container_name: qui
-  hostname: qui.internal
-  user: 1110:1001
+services:
+  qui:
+    image:  ghcr.io/autobrr/qui:v1.25
+    restart: unless-stopped
+    container_name: qui
+    hostname: qui.internal
+    user: 1110:1001
 
-  depends_on:
-    postgresql-qui:
-      condition: service_healthy
-    radarr:
-      condition: service_healthy
-    sonarr:
-      condition: service_healthy
-    prowlarr:
-      condition: service_healthy
-    qbittorrent:
-      condition: service_healthy
+    depends_on:
+      postgresql-qui:
+        condition: service_healthy
+      radarr:
+        condition: service_healthy
+      sonarr:
+        condition: service_healthy
+      prowlarr:
+        condition: service_healthy
+      qbittorrent:
+        condition: service_healthy
 
-  labels:
-    traefik.enable: true
-    traefik.docker.network: traefik
-    traefik.http.routers.qui.rule: Host(`qui.xn--krver-jua.it`)
-    traefik.http.routers.qui.entrypoints: websecure
-    traefik.http.routers.qui.tls: true
-    traefik.http.routers.qui.middlewares: error-pages-middleware
-    traefik.http.routers.qui.service: qui
-    traefik.http.services.qui.loadBalancer.server.port: 7476
+    labels:
+      traefik.enable: true
+      traefik.docker.network: traefik
+      traefik.http.routers.qui.rule: Host(`qui.xn--krver-jua.it`)
+      traefik.http.routers.qui.entrypoints: websecure
+      traefik.http.routers.qui.tls: true
+      traefik.http.routers.qui.middlewares: error-pages-middleware
+      traefik.http.routers.qui.service: qui
+      traefik.http.services.qui.loadBalancer.server.port: 7476
 
-  environment:
-    UMASK: 002
-    TZ: Europe/Amsterdam
+    environment:
+      UMASK: 002
+      TZ: Europe/Amsterdam
 
-    QUI__HOST: "0.0.0.0"
+      QUI__HOST: "0.0.0.0"
 
-    # Database
-    QUI__DATABASE_ENGINE: postgres
-    QUI__DATABASE_PORT: 5432
-    QUI__DATABASE_HOST: postgresql-qui
-    QUI__DATABASE_NAME: qui
-    QUI__DATABASE_USER: qui
-    QUI__DATABASE_PASSWORD_FILE: /run/secrets/pg_pass
+      # Database
+      QUI__DATABASE_ENGINE: postgres
+      QUI__DATABASE_PORT: 5432
+      QUI__DATABASE_HOST: postgresql-qui
+      QUI__DATABASE_NAME: qui
+      QUI__DATABASE_USER: qui
+      QUI__DATABASE_PASSWORD_FILE: /run/secrets/pg_pass
 
-    # OIDC
-    QUI__OIDC_ENABLED: "true"
-    QUI__OIDC_ISSUER: ${QUI_CONFIGURATION_ISSUER:?No OpenID Configuration Issuer configured}
-    QUI__OIDC_CLIENT_ID: ${QUI_OIDC_CLIENT_ID:?No OIDC client ID configured}
-    QUI__OIDC_CLIENT_SECRET_FILE: /run/secrets/client_secret
-    QUI__OIDC_REDIRECT_URL: ${QUI_REDIRECT_URL:?No OpenID Redirect URL configured}
-    QUI__OIDC_DISABLE_BUILT_IN_LOGIN: "true"
+      # OIDC
+      QUI__OIDC_ENABLED: "true"
+      QUI__OIDC_ISSUER: ${QUI_CONFIGURATION_ISSUER:?No OpenID Configuration Issuer configured}
+      QUI__OIDC_CLIENT_ID: ${QUI_OIDC_CLIENT_ID:?No OIDC client ID configured}
+      QUI__OIDC_CLIENT_SECRET_FILE: /run/secrets/client_secret
+      QUI__OIDC_REDIRECT_URL: ${QUI_REDIRECT_URL:?No OpenID Redirect URL configured}
+      QUI__OIDC_DISABLE_BUILT_IN_LOGIN: "true"
 
-    # Metrics
-    QUI__METRICS_ENABLED: "true"
-    QUI__METRICS_HOST: "0.0.0.0"
+      # Metrics
+      QUI__METRICS_ENABLED: "true"
+      QUI__METRICS_HOST: "0.0.0.0"
 
-  volumes:
-    - type: bind
-      source: ${APPDATA_LOCATION:?No appdata directory configured}/qui/config
-      target: /config
-    - type: bind
-      source: ${DATA_LOCATION:?No data directory configured}/torrents
-      target: /data/torrents
+    volumes:
+      - type: bind
+        source: ${APPDATA_LOCATION:?No appdata directory configured}/qui/config
+        target: /config
+      - type: bind
+        source: ${DATA_LOCATION:?No data directory configured}/torrents
+        target: /data/torrents
 
-  secrets:
-    - source: QUI_OIDC_CLIENT_SECRET
-      target: client_secret
-    - source: QUI_POSTGRES_PASSWORD
-      target: pg_pass
-  
-  networks:
-    - traefik
-    - back-end_qui
+    secrets:
+      - source: QUI_OIDC_CLIENT_SECRET
+        target: client_secret
+      - source: QUI_POSTGRES_PASSWORD
+        target: pg_pass
+    
+    networks:
+      - traefik
+      - back-end_qui
 
   
   postgresql-qui:
