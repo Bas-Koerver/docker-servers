@@ -1,0 +1,75 @@
+services:
+  profilarr:
+    image: ghcr.io/dictionarry-hub/profilarr:2
+    restart: unless-stopped
+    container_name: profilarr
+    hostname: profilarr.internal
+
+    depends_on:
+      parser:
+        condition: service_healthy
+      radarr:
+        condition: service_healthy
+      sonarr:
+        condition: service_healthy
+
+    labels:
+      traefik.enable: true
+      traefik.docker.network: traefik
+      traefik.http.routers.profilarr.rule: Host(`profilarr.xn--krver-jua.it`)
+      traefik.http.routers.profilarr.entrypoints: websecure
+      traefik.http.routers.profilarr.tls: true
+      traefik.http.routers.profilarr.middlewares: error-pages-middleware
+      traefik.http.routers.profilarr.service: profilarr
+      traefik.http.services.profilarr.loadBalancer.server.port: 6868
+
+    environment:
+      PUID: 1111
+      PGID: 1001
+      TZ: Europe/Amsterdam
+
+      ORIGIN: https://profilarr.xn--krver-jua.it
+      PARSER_HOST: parser
+      PARSER_PORT: 5000
+
+      # OIDC
+      AUTH: oidc
+      OIDC_DISCOVERY_URL: ${PROFILARR_CONFIGURATION_ISSUER:?No OpenID Configuration Issuer configured}
+      OIDC_CLIENT_ID_FILE: /run/secrets/client_id
+      OIDC_CLIENT_SECRET_FILE: /run/secrets/client_secret
+    
+    volumes:
+      - type: bind
+        source: ${APPDATA_LOCATION:?No appdata directory configured}/profilarr/config
+        target: /config
+    
+    secrets:
+      - source: PROFILARR_OIDC_CLIENT_ID
+        target: client_id
+      - source: PROFILARR_OIDC_CLIENT_SECRET
+        target: client_secret
+
+    networks:
+      - traefik
+      - back-end_profilarr
+
+
+  parser:
+    image: ghcr.io/dictionarry-hub/profilarr-parser:2
+    restart: unless-stopped
+    container_name: profilarr-parser
+
+    networks:
+      - back-end_profilarr
+
+
+secrets:
+  PROFILARR_OIDC_CLIENT_ID:
+    file: ${SECRETS_LOCATION:?No secrets folder configured}/${PROFILARR_OIDC_CLIENT_ID_FILE:?No OIDC client ID file configured}
+  PROFILARR_OIDC_CLIENT_SECRET:
+    file: ${SECRETS_LOCATION:?No secrets folder configured}/${PROFILARR_OIDC_CLIENT_SECRET_FILE:?No OIDC client secret file configured}
+
+  
+networks:
+  back-end_profilarr:
+    internal: true

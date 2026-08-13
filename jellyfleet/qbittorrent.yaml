@@ -1,19 +1,20 @@
 services:
-  qbittorrent:
+# Instance 1
+  qbittorrent-ganymede:
     image: ghcr.io/hotio/qbittorrent:release-v5
     restart: unless-stopped
-    container_name: qbittorrent
-    hostname: qbittorrent.internal
+    container_name: qbittorrent-ganymede
+    hostname: qbittorrent-ganymede.internal
 
     labels:
       traefik.enable: true
       traefik.docker.network: traefik
-      traefik.http.routers.qbittorrent.rule: Host(`qbittorrent.xn--krver-jua.it`)
-      traefik.http.routers.qbittorrent.entrypoints: websecure
-      traefik.http.routers.qbittorrent.tls: true
-      traefik.http.routers.qbittorrent.middlewares: error-pages-middleware
-      traefik.http.routers.qbittorrent.service: qbittorrent
-      traefik.http.services.qbittorrent.loadBalancer.server.port: 8080
+      traefik.http.routers.qbittorrent-ganymede.rule: Host(`ganymede.qbittorrent.xn--krver-jua.it`)
+      traefik.http.routers.qbittorrent-ganymede.entrypoints: websecure
+      traefik.http.routers.qbittorrent-ganymede.tls: true
+      traefik.http.routers.qbittorrent-ganymede.middlewares: error-pages-middleware
+      traefik.http.routers.qbittorrent-ganymede.service: qbittorrent-ganymede
+      traefik.http.services.qbittorrent-ganymede.loadBalancer.server.port: 8080
 
     environment:
       PUID: 1109
@@ -23,7 +24,7 @@ services:
 
       # VPN config
       VPN_ENABLED: "true"
-      VPN_CONF: wg0-proton
+      VPN_CONF: wg0-ganymede
       VPN_PROVIDER: proton 
       VPN_LAN_NETWORK: 10.0.8.1/24
       VPN_LAN_LEAK_ENABLED: "false"
@@ -32,7 +33,7 @@ services:
 
     volumes:
       - type: bind
-        source: ${APPDATA_LOCATION:?No appdata directory configured}/qbittorrent/config
+        source: ${APPDATA_LOCATION:?No appdata directory configured}/qbittorrent/ganymede/config
         target: /config
       - type: bind
         source: ${DATA_LOCATION:?No data directory configured}/torrents
@@ -60,120 +61,249 @@ services:
       retries: 3
 
 
-  qui:
-    image:  ghcr.io/autobrr/qui:v1.25
+# Instance 2
+  qbittorrent-callisto:
+    image: ghcr.io/hotio/qbittorrent:release-v5
     restart: unless-stopped
-    container_name: qui
-    hostname: qui.internal
-    user: 1110:1001
-
-    depends_on:
-      postgresql-qui:
-        condition: service_healthy
-      radarr:
-        condition: service_healthy
-      sonarr:
-        condition: service_healthy
-      prowlarr:
-        condition: service_healthy
-      qbittorrent:
-        condition: service_healthy
+    container_name: qbittorrent-callisto
+    hostname: qbittorrent-callisto.internal
 
     labels:
       traefik.enable: true
       traefik.docker.network: traefik
-      traefik.http.routers.qui.rule: Host(`qui.xn--krver-jua.it`)
-      traefik.http.routers.qui.entrypoints: websecure
-      traefik.http.routers.qui.tls: true
-      traefik.http.routers.qui.middlewares: error-pages-middleware
-      traefik.http.routers.qui.service: qui
-      traefik.http.services.qui.loadBalancer.server.port: 7476
+      traefik.http.routers.qbittorrent-callisto.rule: Host(`callisto.qbittorrent.xn--krver-jua.it`)
+      traefik.http.routers.qbittorrent-callisto.entrypoints: websecure
+      traefik.http.routers.qbittorrent-callisto.tls: true
+      traefik.http.routers.qbittorrent-callisto.middlewares: error-pages-middleware
+      traefik.http.routers.qbittorrent-callisto.service: qbittorrent-callisto
+      traefik.http.services.qbittorrent-callisto.loadBalancer.server.port: 8080
 
     environment:
+      PUID: 1109
+      PGID: 1001
       UMASK: 002
       TZ: Europe/Amsterdam
 
-      QUI__HOST: "0.0.0.0"
-
-      # Database
-      QUI__DATABASE_ENGINE: postgres
-      QUI__DATABASE_PORT: 5432
-      QUI__DATABASE_HOST: postgresql-qui
-      QUI__DATABASE_NAME: qui
-      QUI__DATABASE_USER: qui
-      QUI__DATABASE_PASSWORD_FILE: /run/secrets/pg_pass
-
-      # OIDC
-      QUI__OIDC_ENABLED: "true"
-      QUI__OIDC_ISSUER: ${QUI_CONFIGURATION_ISSUER:?No OpenID Configuration Issuer configured}
-      QUI__OIDC_CLIENT_ID: ${QUI_OIDC_CLIENT_ID:?No OIDC client ID configured}
-      QUI__OIDC_CLIENT_SECRET_FILE: /run/secrets/client_secret
-      QUI__OIDC_REDIRECT_URL: ${QUI_REDIRECT_URL:?No OpenID Redirect URL configured}
-      QUI__OIDC_DISABLE_BUILT_IN_LOGIN: "true"
-
-      # Metrics
-      QUI__METRICS_ENABLED: "true"
-      QUI__METRICS_HOST: "0.0.0.0"
+      # VPN config
+      VPN_ENABLED: "true"
+      VPN_CONF: wg0-callisto
+      VPN_PROVIDER: proton 
+      VPN_LAN_NETWORK: 10.0.8.1/24
+      VPN_LAN_LEAK_ENABLED: "false"
+      VPN_AUTO_PORT_FORWARD: "true"
+      VPN_HEALTHCHECK_ENABLED: "true"
 
     volumes:
       - type: bind
-        source: ${APPDATA_LOCATION:?No appdata directory configured}/qui/config
+        source: ${APPDATA_LOCATION:?No appdata directory configured}/qbittorrent/callisto/config
         target: /config
       - type: bind
         source: ${DATA_LOCATION:?No data directory configured}/torrents
         target: /data/torrents
-
-    secrets:
-      - source: QUI_OIDC_CLIENT_SECRET
-        target: client_secret
-      - source: QUI_POSTGRES_PASSWORD
-        target: pg_pass
     
     networks:
       - traefik
-      - back-end_qui
 
-  
-  postgresql-qui:
-    image: docker.io/library/postgres:18-alpine
-    restart: unless-stopped
-    container_name: postgresql-qui
-
-    environment:
-      POSTGRES_DB: qui
-      POSTGRES_USER: qui
-      POSTGRES_PASSWORD_FILE: /run/secrets/pg_pass
-
-    volumes:
-      - type: bind
-        source: ${APPDATA_LOCATION:?No appdata directory configured}/qui/postgresql
-        target: /var/lib/postgresql/
-
-    secrets:
-      - source: QUI_POSTGRES_PASSWORD
-        target: pg_pass
-
-    networks:
-      - back-end_qui
+    cap_add:
+      - NET_ADMIN
 
     healthcheck:
       test: [
-        "CMD-SHELL",
-        "pg_isready -q --username \"$${POSTGRES_USER}\" --dbname postgres"
-        ]
+        "CMD",
+        "curl",
+        "--fail",
+        "--silent",
+        "--show-error",
+        "--output", "/dev/null",
+        "http://127.0.0.1:8080/"
+      ]
       start_period: 20s
-      timeout: 5s
-      interval: 30s
-      retries: 5
+      timeout: 3s
+      interval: 15s
+      retries: 3
+      
+
+# Instance 3
+  # qbittorrent-io:
+  #   image: ghcr.io/hotio/qbittorrent:release-v5
+  #   restart: unless-stopped
+  #   container_name: qbittorrent-io
+  #   hostname: qbittorrent-io.internal
+
+  #   labels:
+  #     traefik.enable: true
+  #     traefik.docker.network: traefik
+  #     traefik.http.routers.qbittorrent-io.rule: Host(`io.qbittorrent.xn--krver-jua.it`)
+  #     traefik.http.routers.qbittorrent-io.entrypoints: websecure
+  #     traefik.http.routers.qbittorrent-io.tls: true
+  #     traefik.http.routers.qbittorrent-io.middlewares: error-pages-middleware
+  #     traefik.http.routers.qbittorrent-io.service: qbittorrent-io
+  #     traefik.http.services.qbittorrent-io.loadBalancer.server.port: 8080
+
+  #   environment:
+  #     PUID: 1109
+  #     PGID: 1001
+  #     UMASK: 002
+  #     TZ: Europe/Amsterdam
+
+  #     # VPN config
+  #     VPN_ENABLED: "true"
+  #     VPN_CONF: wg0-io
+  #     VPN_PROVIDER: proton 
+  #     VPN_LAN_NETWORK: 10.0.8.1/24
+  #     VPN_LAN_LEAK_ENABLED: "false"
+  #     VPN_AUTO_PORT_FORWARD: "true"
+  #     VPN_HEALTHCHECK_ENABLED: "true"
+
+  #   volumes:
+  #     - type: bind
+  #       source: ${APPDATA_LOCATION:?No appdata directory configured}/qbittorrent/io/config
+  #       target: /config
+  #     - type: bind
+  #       source: ${DATA_LOCATION:?No data directory configured}/torrents
+  #       target: /data/torrents
+    
+  #   networks:
+  #     - traefik
+
+  #   cap_add:
+  #     - NET_ADMIN
+
+  #   healthcheck:
+  #     test: [
+  #       "CMD",
+  #       "curl",
+  #       "--fail",
+  #       "--silent",
+  #       "--show-error",
+  #       "--output", "/dev/null",
+  #       "http://127.0.0.1:8080/"
+  #     ]
+  #     start_period: 20s
+  #     timeout: 3s
+  #     interval: 15s
+  #     retries: 3
 
 
-secrets:
-  QUI_OIDC_CLIENT_SECRET:
-    file: ${SECRETS_LOCATION:?No secrets folder configured}/${QUI_OIDC_CLIENT_SECRET_FILE:?No OIDC client secret file configured}
-  QUI_POSTGRES_PASSWORD:
-    file: ${SECRETS_LOCATION:?No secrets folder configured}/${QUI_PG_PASS_FILE:?No Qui database password file configured}
+# Instance 4
+  # qbittorrent-europa:
+  #   image: ghcr.io/hotio/qbittorrent:release-v5
+  #   restart: unless-stopped
+  #   container_name: qbittorrent-europa
+  #   hostname: qbittorrent-europa.internal
+
+  #   labels:
+  #     traefik.enable: true
+  #     traefik.docker.network: traefik
+  #     traefik.http.routers.qbittorrent-europa.rule: Host(`europa.qbittorrent.xn--krver-jua.it`)
+  #     traefik.http.routers.qbittorrent-europa.entrypoints: websecure
+  #     traefik.http.routers.qbittorrent-europa.tls: true
+  #     traefik.http.routers.qbittorrent-europa.middlewares: error-pages-middleware
+  #     traefik.http.routers.qbittorrent-europa.service: qbittorrent=europa
+  #     traefik.http.services.qbittorrent-europa.loadBalancer.server.port: 8080
+
+  #   environment:
+  #     PUID: 1109
+  #     PGID: 1001
+  #     UMASK: 002
+  #     TZ: Europe/Amsterdam
+
+  #     # VPN config
+  #     VPN_ENABLED: "true"
+  #     VPN_CONF: wg0-europa
+  #     VPN_PROVIDER: proton 
+  #     VPN_LAN_NETWORK: 10.0.8.1/24
+  #     VPN_LAN_LEAK_ENABLED: "false"
+  #     VPN_AUTO_PORT_FORWARD: "true"
+  #     VPN_HEALTHCHECK_ENABLED: "true"
+
+  #   volumes:
+  #     - type: bind
+  #       source: ${APPDATA_LOCATION:?No appdata directory configured}/qbittorrent/europa/config
+  #       target: /config
+  #     - type: bind
+  #       source: ${DATA_LOCATION:?No data directory configured}/torrents
+  #       target: /data/torrents
+    
+  #   networks:
+  #     - traefik
+
+  #   cap_add:
+  #     - NET_ADMIN
+
+  #   healthcheck:
+  #     test: [
+  #       "CMD",
+  #       "curl",
+  #       "--fail",
+  #       "--silent",
+  #       "--show-error",
+  #       "--output", "/dev/null",
+  #       "http://127.0.0.1:8080/"
+  #     ]
+  #     start_period: 20s
+  #     timeout: 3s
+  #     interval: 15s
+  #     retries: 3
 
 
-networks:
-  back-end_qui:
-    internal: true
+# Instance 5
+  # qbittorrent-amalthea:
+  #   image: ghcr.io/hotio/qbittorrent:release-v5
+  #   restart: unless-stopped
+  #   container_name: qbittorrent-amalthea
+  #   hostname: qbittorrent-amalthea.internal
+
+  #   labels:
+  #     traefik.enable: true
+  #     traefik.docker.network: traefik
+  #     traefik.http.routers.qbittorrent-amalthea.rule: Host(`amalthea.qbittorrent.xn--krver-jua.it`)
+  #     traefik.http.routers.qbittorrent-amalthea.entrypoints: websecure
+  #     traefik.http.routers.qbittorrent-amalthea.tls: true
+  #     traefik.http.routers.qbittorrent-amalthea.middlewares: error-pages-middleware
+  #     traefik.http.routers.qbittorrent-amalthea.service: qbittorrent-amalthea
+  #     traefik.http.services.qbittorrent-amalthea.loadBalancer.server.port: 8080
+
+  #   environment:
+  #     PUID: 1109
+  #     PGID: 1001
+  #     UMASK: 002
+  #     TZ: Europe/Amsterdam
+
+  #     # VPN config
+  #     VPN_ENABLED: "true"
+  #     VPN_CONF: wg0-amalthea
+  #     VPN_PROVIDER: proton 
+  #     VPN_LAN_NETWORK: 10.0.8.1/24
+  #     VPN_LAN_LEAK_ENABLED: "false"
+  #     VPN_AUTO_PORT_FORWARD: "true"
+  #     VPN_HEALTHCHECK_ENABLED: "true"
+
+  #   volumes:
+  #     - type: bind
+  #       source: ${APPDATA_LOCATION:?No appdata directory configured}/qbittorrent/amalthea/config
+  #       target: /config
+  #     - type: bind
+  #       source: ${DATA_LOCATION:?No data directory configured}/torrents
+  #       target: /data/torrents
+    
+  #   networks:
+  #     - traefik
+
+  #   cap_add:
+  #     - NET_ADMIN
+
+  #   healthcheck:
+  #     test: [
+  #       "CMD",
+  #       "curl",
+  #       "--fail",
+  #       "--silent",
+  #       "--show-error",
+  #       "--output", "/dev/null",
+  #       "http://127.0.0.1:8080/"
+  #     ]
+  #     start_period: 20s
+  #     timeout: 3s
+  #     interval: 15s
+  #     retries: 3

@@ -8,6 +8,8 @@ include:
   - autobrr.yaml
   - bazarr.yaml
   - qbittorrent.yaml
+  - qui.yaml
+  - profilarr.yaml
 
 
 networks:
