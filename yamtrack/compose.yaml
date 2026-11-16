@@ -1,0 +1,72 @@
+services:
+  yamtrack:
+    # 0.26.3
+    image: ghcr.io/fuzzygrim/yamtrack@sha256:78497b454b2b52d3b1062f6fd238351d714cff0895db4369e49ace36f4622e75
+    restart: unless-stopped
+    container_name: yamtrack
+    hostname: yamtrack.internal
+
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+    labels:
+      traefik.enable: true
+      traefik.docker.network: traefik
+      traefik.http.routers.yamtrack.rule: Host(`yamtrack.xn--krver-jua.it`)
+      traefik.http.routers.yamtrack.entrypoints: websecure
+      traefik.http.routers.yamtrack.tls: true
+      traefik.http.routers.yamtrack.middlewares: error-pages-middleware
+      traefik.http.routers.yamtrack.service: yamtrack
+      traefik.http.services.yamtrack.loadBalancer.server.port: 8000
+
+    environment:
+      TZ: Europe/Amsterdam
+      SECRET: longstring
+      REDIS_URL: redis://redis:6379
+      DB_HOST: postgresql
+      DB_NAME: yamtrack
+      DB_USER: yamtrack
+      DB_PASSWORD: yamtrack
+      DB_PORT: 5432
+
+    networks:
+      - traefik
+      - back-end_yamtrack
+      
+
+  postgresql:
+    image: postgres:16-alpine
+    container_name: yamtrack-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: yamtrack
+      POSTGRES_USER: yamtrack
+      POSTGRES_PASSWORD: yamtrack
+    volumes:
+      - ./db:/var/lib/postgresql/data
+
+    networks:
+      - back-end_yamtrack
+
+
+  redis:
+    container_name: yamtrack-redis
+    image: redis:8-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+
+    networks:
+      - back-end_yamtrack
+
+
+networks:
+  back-end_yamtrack:
+    internal: true
+
+
+volumes:
+  redis_data:

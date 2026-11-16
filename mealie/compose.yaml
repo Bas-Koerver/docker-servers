@@ -1,0 +1,116 @@
+services:
+  mealie:
+    image: ghcr.io/mealie-recipes/mealie:v3.28.0
+    restart: unless-stopped
+    container_name: mealie
+
+    deploy:
+      resources:
+        limits:
+          memory: 500M
+    
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    labels:
+      traefik.enable: true
+      traefik.docker.network: traefik
+      traefik.http.routers.mealie.rule: Host(`mealie.xn--krver-jua.it`)
+      traefik.http.routers.mealie.entrypoints: websecure
+      traefik.http.routers.mealie.tls: true
+      traefik.http.routers.mealie.middlewares: error-pages-middleware
+      traefik.http.routers.mealie.service: mealie
+      traefik.http.services.mealie.loadBalancer.server.port: 9000
+
+    environment:
+      # General
+      PUID: 1112
+      PGID: 1002
+      TZ: Europe/Amsterdam
+      ALLOW_SIGNUP: "false"
+      BASE_URL: https://mealie.xn--krver-jua.it
+      ALLOW_PASSWORD_LOGIN: "false"
+
+      # Database
+      DB_ENGINE: postgres
+      POSTGRES_SERVER: postgresql-mealie
+      POSTGRES_DB: mealie
+      POSTGRES_USER: mealie
+      POSTGRES_PASSWORD_FILE: /run/secrets/pg_pass
+
+      # OIDC
+      OIDC_AUTH_ENABLED: "true"
+      OIDC_CONFIGURATION_URL: ${MEALIE_CONFIGURATION_URL:?No OpenID Configuration URL configured}
+      OIDC_CLIENT_ID_FILE: /run/secrets/client_id
+      OIDC_CLIENT_SECRET_FILE: /run/secrets/client_secret
+      OIDC_USER_GROUP: "mealie-users"
+      OIDC_ADMIN_GROUP: "mealie-admins"
+      OIDC_PROVIDER_NAME: "Authentik"
+      OIDC_REMEMBER_ME: "true"
+      OIDC_GROUPS_CLAIM: "entitlements"
+    
+    volumes:
+      - type: bind
+        source: ${APPDATA_LOCATION:?No appdata directory configured}/mealie/data
+        target: /app/data
+
+    secrets:
+      - source: MEALIE_OIDC_CLIENT_ID
+        target: client_id
+      - source: MEALIE_OIDC_CLIENT_SECRET
+        target: client_secret
+      - source: MEALIE_POSTGRES_PASSWORD
+        target: pg_pass
+    
+    networks:
+      - traefik
+      - back-end
+
+
+  postgresql:
+    image: docker.io/library/postgres:18-alpine
+    restart: unless-stopped
+    container_name: postgresql-mealie
+
+    environment:
+      POSTGRES_DB: mealie
+      POSTGRES_USER: mealie
+      POSTGRES_PASSWORD_FILE: /run/secrets/pg_pass
+
+    volumes:
+      - type: bind
+        source: ${APPDATA_LOCATION:?No appdata directory configured}/mealie/postgresql
+        target: /var/lib/postgresql/
+
+    secrets:
+      - source: MEALIE_POSTGRES_PASSWORD
+        target: pg_pass
+
+    networks:
+      - back-end
+
+    healthcheck:
+      test: [
+        "CMD-SHELL",
+        "pg_isready -q --username \"$${POSTGRES_USER}\" --dbname postgres"
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s  
+
+
+secrets:
+  MEALIE_OIDC_CLIENT_ID:
+    file: ${SECRETS_LOCATION:?No secrets folder configured}/${MEALIE_OIDC_CLIENT_ID_FILE:?No OIDC client ID file configured}
+  MEALIE_OIDC_CLIENT_SECRET:
+    file: ${SECRETS_LOCATION:?No secrets folder configured}/${MEALIE_OIDC_CLIENT_SECRET_FILE:?No OIDC client secret file configured}
+  MEALIE_POSTGRES_PASSWORD:
+    file: ${SECRETS_LOCATION:?No secrets folder configured}/${MEALIE_PG_PASS_FILE:?No database password file configured}
+
+networks:
+  traefik:
+    external: true  
+  back-end:
+    internal: true

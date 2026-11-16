@@ -24,7 +24,7 @@ services:
 
       # VPN config
       VPN_ENABLED: "true"
-      VPN_CONF: wg0-ganymede
+      VPN_CONF: wg0
       VPN_PROVIDER: proton 
       VPN_LAN_NETWORK: 10.0.8.1/24
       VPN_LAN_LEAK_ENABLED: "false"
@@ -62,65 +62,65 @@ services:
 
 
 # Instance 2
-  qbittorrent-callisto:
-    image: ghcr.io/hotio/qbittorrent:release-v5
-    restart: unless-stopped
-    container_name: qbittorrent-callisto
-    hostname: qbittorrent-callisto.internal
+  # qbittorrent-callisto:
+  #   image: ghcr.io/hotio/qbittorrent:release-v5
+  #   restart: unless-stopped
+  #   container_name: qbittorrent-callisto
+  #   hostname: qbittorrent-callisto.internal
 
-    labels:
-      traefik.enable: true
-      traefik.docker.network: traefik
-      traefik.http.routers.qbittorrent-callisto.rule: Host(`callisto.qbittorrent.xn--krver-jua.it`)
-      traefik.http.routers.qbittorrent-callisto.entrypoints: websecure
-      traefik.http.routers.qbittorrent-callisto.tls: true
-      traefik.http.routers.qbittorrent-callisto.middlewares: error-pages-middleware
-      traefik.http.routers.qbittorrent-callisto.service: qbittorrent-callisto
-      traefik.http.services.qbittorrent-callisto.loadBalancer.server.port: 8080
+  #   labels:
+  #     traefik.enable: true
+  #     traefik.docker.network: traefik
+  #     traefik.http.routers.qbittorrent-callisto.rule: Host(`callisto.qbittorrent.xn--krver-jua.it`)
+  #     traefik.http.routers.qbittorrent-callisto.entrypoints: websecure
+  #     traefik.http.routers.qbittorrent-callisto.tls: true
+  #     traefik.http.routers.qbittorrent-callisto.middlewares: error-pages-middleware
+  #     traefik.http.routers.qbittorrent-callisto.service: qbittorrent-callisto
+  #     traefik.http.services.qbittorrent-callisto.loadBalancer.server.port: 8080
 
-    environment:
-      PUID: 1109
-      PGID: 1001
-      UMASK: 002
-      TZ: Europe/Amsterdam
+  #   environment:
+  #     PUID: 1109
+  #     PGID: 1001
+  #     UMASK: 002
+  #     TZ: Europe/Amsterdam
 
-      # VPN config
-      VPN_ENABLED: "true"
-      VPN_CONF: wg0-callisto
-      VPN_PROVIDER: proton 
-      VPN_LAN_NETWORK: 10.0.8.1/24
-      VPN_LAN_LEAK_ENABLED: "false"
-      VPN_AUTO_PORT_FORWARD: "true"
-      VPN_HEALTHCHECK_ENABLED: "true"
+  #     # VPN config
+  #     VPN_ENABLED: "true"
+  #     VPN_CONF: wg1
+  #     VPN_PROVIDER: proton 
+  #     VPN_LAN_NETWORK: 10.0.8.1/24
+  #     VPN_LAN_LEAK_ENABLED: "false"
+  #     VPN_AUTO_PORT_FORWARD: "true"
+  #     VPN_HEALTHCHECK_ENABLED: "true"
 
-    volumes:
-      - type: bind
-        source: ${APPDATA_LOCATION:?No appdata directory configured}/qbittorrent/callisto/config
-        target: /config
-      - type: bind
-        source: ${DATA_LOCATION:?No data directory configured}/torrents
-        target: /data/torrents
+  #   volumes:
+  #     - type: bind
+  #       source: ${APPDATA_LOCATION:?No appdata directory configured}/qbittorrent/callisto/config
+  #       target: /config
+  #     - type: bind
+  #       source: ${DATA_LOCATION:?No data directory configured}/torrents
+  #       target: /data/torrents
     
-    networks:
-      - traefik
+  #   networks:
+  #     - traefik
 
-    cap_add:
-      - NET_ADMIN
+  #   cap_add:
+  #     - NET_ADMIN
 
-    healthcheck:
-      test: [
-        "CMD",
-        "curl",
-        "--fail",
-        "--silent",
-        "--show-error",
-        "--output", "/dev/null",
-        "http://127.0.0.1:8080/"
-      ]
-      start_period: 20s
-      timeout: 3s
-      interval: 15s
-      retries: 3
+  #   healthcheck:
+  #     test: [
+  #       "CMD",
+  #       "curl",
+  #       "--fail",
+  #       "--silent",
+  #       "--show-error",
+  #       "--output", "/dev/null",
+  #       "http://127.0.0.1:8080/"
+  #     ]
+  #     start_period: 20s
+  #     timeout: 3s
+  #     interval: 15s
+  #     retries: 3
       
 
 # Instance 3
@@ -148,7 +148,7 @@ services:
 
   #     # VPN config
   #     VPN_ENABLED: "true"
-  #     VPN_CONF: wg0-io
+  #     VPN_CONF: wg2
   #     VPN_PROVIDER: proton 
   #     VPN_LAN_NETWORK: 10.0.8.1/24
   #     VPN_LAN_LEAK_ENABLED: "false"
@@ -210,7 +210,7 @@ services:
 
   #     # VPN config
   #     VPN_ENABLED: "true"
-  #     VPN_CONF: wg0-europa
+  #     VPN_CONF: wg3
   #     VPN_PROVIDER: proton 
   #     VPN_LAN_NETWORK: 10.0.8.1/24
   #     VPN_LAN_LEAK_ENABLED: "false"
@@ -272,7 +272,7 @@ services:
 
   #     # VPN config
   #     VPN_ENABLED: "true"
-  #     VPN_CONF: wg0-amalthea
+  #     VPN_CONF: wg4
   #     VPN_PROVIDER: proton 
   #     VPN_LAN_NETWORK: 10.0.8.1/24
   #     VPN_LAN_LEAK_ENABLED: "false"

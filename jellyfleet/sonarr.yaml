@@ -49,6 +49,10 @@ services:
         source: ${DATA_LOCATION:?No data directory configured}
         target: /data
 
+    dns:
+      # local dns server
+      - 10.0.2.3
+
     networks:
       - traefik
       - back-end_sonarr

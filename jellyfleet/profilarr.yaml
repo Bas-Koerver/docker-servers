@@ -34,7 +34,7 @@ services:
 
       # OIDC
       AUTH: oidc
-      OIDC_DISCOVERY_URL: ${PROFILARR_CONFIGURATION_ISSUER:?No OpenID Configuration Issuer configured}
+      OIDC_DISCOVERY_URL: ${PROFILARR_CONFIGURATION_URL:?No OpenID Configuration URL configured}
       OIDC_CLIENT_ID_FILE: /run/secrets/client_id
       OIDC_CLIENT_SECRET_FILE: /run/secrets/client_secret
     
