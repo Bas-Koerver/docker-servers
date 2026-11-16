@@ -23,14 +23,55 @@ services:
       traefik.http.services.yamtrack.loadBalancer.server.port: 8000
 
     environment:
+      PGUID: 1113
+      PGID: 1003
       TZ: Europe/Amsterdam
-      SECRET: longstring
-      REDIS_URL: redis://redis:6379
-      DB_HOST: postgresql
+
+      URLS: https://yamtrack.xn--krver-jua.it
+      SECRET_FILE: longstring
+
+      # Database
+      REDIS_URL: redis://yamtrack-redis:6379
+      DB_HOST: postgresql-yamtrack
+      DB_PORT: 5432
       DB_NAME: yamtrack
       DB_USER: yamtrack
-      DB_PASSWORD: yamtrack
-      DB_PORT: 5432
+      DB_PASSWORD_FILE: /run/secrets/pg_pass
+
+      # Media sources
+      TMDB_API_FILE: /run/secrets/tmdb_api
+      MAL_API_FILE: /run/secrets/mal_api
+      IGDB_ID_FILE: /run/secrets/igdb_id
+      IGDB_SECRET_FILE: /run/secrets/igdb_secret
+      HARDCOVER_API_FILE: /run/secrets/hardcover_api
+      COMICVINE_API_FILE: /run/secrets/comicvine_api
+      TRAKT_API_FILE: /run/secrets/trakt_api
+
+      # OIDC
+      SOCIAL_PROVIDERS: 
+      ACCOUNT_LOGOUT_REDIRECT_URL: 
+      SOCIALACCOUNT_PROVIDERS_FILE: /run/secrets/socialaccount_providers
+      SOCIALACCOUNT_ONLY: "false"
+
+    secrets:
+      - source: YAMTRACK_TMDB_API_SECRET
+        target: tmdb_api
+      - source: YAMTRACK_MAL_API_SECRET
+        target: mal_api
+      - source: YAMTRACK_IGDB_ID
+        target: igdb_id
+      - source: YAMTRACK_IGDB_SECRET
+        target: igdb_secret
+      - source: YAMTRACK_HARDCOVER_API_SECRET
+        target: hardcover_api
+      - source: YAMTRACK_COMICVINE_API_SECRET
+        target: comicvine_api
+      - source: YAMTRACK_TRAKT_API_SECRET
+        target: trakt_api
+      - source: YAMTRACK_SOCIALACCOUNT_PROVIDERS
+        target: socialaccount_providers
+      - source: YAMTRACK_POSTGRES_PASSWORD
+        target: pg_pass
 
     networks:
       - traefik
@@ -38,18 +79,36 @@ services:
       
 
   postgresql:
-    image: postgres:16-alpine
-    container_name: yamtrack-db
+    image: docker.io/library/postgres:18-alpine
     restart: unless-stopped
+    container_name: postgresql-yamtrack
+
     environment:
       POSTGRES_DB: yamtrack
       POSTGRES_USER: yamtrack
-      POSTGRES_PASSWORD: yamtrack
+      POSTGRES_PASSWORD_FILE: /run/secrets/pg_pass
+
     volumes:
-      - ./db:/var/lib/postgresql/data
+      - type: bind
+        source: ${APPDATA_LOCATION:?No appdata directory configured}/yamtrack/postgresql
+        target: /var/lib/postgresql/
+    
+    secrets:
+      - source: YAMTRACK_POSTGRES_PASSWORD
+        target: pg_pass
 
     networks:
       - back-end_yamtrack
+
+    healthcheck:
+      test: [
+        "CMD-SHELL",
+        "pg_isready -q --username \"$${POSTGRES_USER}\" --dbname postgres"
+        ]
+      start_period: 20s
+      timeout: 5s
+      interval: 30s
+      retries: 5
 
 
   redis:
